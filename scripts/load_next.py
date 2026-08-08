@@ -59,6 +59,10 @@ def rebuild_seed(loaded: list[str]) -> int:
     return len(rows_out)
 
 
+def log(label: str, msg: str) -> None:
+    print(f"[{label}] {msg:<0}", flush=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--action", default="load_next",
@@ -66,20 +70,31 @@ def main() -> None:
     args = ap.parse_args()
 
     loaded = read_state()
+    all_files = sorted(p.stem for p in INCOMING.glob("*.csv"))
+    log("scan", f"incoming/ has {len(all_files)} vendor files: "
+                + ", ".join(f + ".csv" for f in all_files))
+    log("state", f"{len(loaded)} loaded, {len(pending(loaded))} pending "
+                 f"({STATE_FILE.relative_to(ROOT)})")
+
     if args.action == "reset":
+        log("reset", "clearing load state — CRM demo returns to its original companies")
         loaded = []
     elif args.action == "load_next":
         queue = pending(loaded)
         if not queue:
-            print("nothing to load: all incoming files already loaded")
+            log("pickup", "nothing to do: every incoming file is already loaded")
         else:
-            loaded = loaded + [queue[0]]
-            print(f"picked up: {queue[0]}.csv")
+            name = queue[0]
+            with open(INCOMING / f"{name}.csv", newline="") as fh:
+                n_rows = sum(1 for _ in csv.DictReader(fh))
+            log("pickup", f"next in queue: {name}.csv ({n_rows} records)")
+            loaded = loaded + [name]
 
     write_state(loaded)
     n = rebuild_seed(loaded)
-    print(f"loaded files: {loaded or 'none'} -> {n} vendor records in "
-          f"{SEED_FILE.relative_to(ROOT)}")
+    log("seed", f"rebuilt {SEED_FILE.relative_to(ROOT)}: {n} vendor records "
+                f"from {len(loaded)} file(s), stamped with source_file + row_num")
+    log("done", "handing off to dbt build for dedupe + tests")
 
 
 if __name__ == "__main__":

@@ -30,16 +30,22 @@ jobs:
       - name: Install dbt
         run: pip install dbt-core dbt-duckdb duckdb
 
+      # shell: bash => pipefail, so a failing step still fails through tee
       - name: Load next vendor file (Python)
-        run: python scripts/load_next.py --action "${{ inputs.action || 'load_next' }}"
+        shell: bash
+        run: python scripts/load_next.py --action "${{ inputs.action || 'load_next' }}" 2>&1 | tee /tmp/python.log
 
       - name: Run dbt (seeds + models + tests)
-        run: dbt build
+        shell: bash
+        run: dbt build --no-use-colors 2>&1 | tee /tmp/dbt.log
         env:
           DBT_PROFILES_DIR: .
 
       - name: Export tables for the web console
-        run: python scripts/export_json.py
+        run: >
+          python scripts/export_json.py
+          --action "${{ inputs.action || 'load_next' }}"
+          --python-log /tmp/python.log --dbt-log /tmp/dbt.log
 
       - name: Commit results
         run: |

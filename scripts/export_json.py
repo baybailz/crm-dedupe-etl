@@ -9,8 +9,11 @@ the loader state and the incoming/ directory, and writes:
     record_status.json         every vendor record + disposition
     potential_duplicates.json  the pair-level duplicate report
     next_file.json             raw preview of the next pending file
+    logs.json                  captured stdout of the load + dbt steps
+                               (--python-log / --dbt-log / --action)
 """
 
+import argparse
 import csv
 import json
 from datetime import datetime, timezone
@@ -31,7 +34,19 @@ def rows_of(con, sql: str) -> list[dict]:
     return [dict(zip(cols, r)) for r in cur.fetchall()]
 
 
+def read_log(path: str | None) -> str:
+    if path and Path(path).exists():
+        return Path(path).read_text(errors="replace").rstrip()
+    return ""
+
+
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--python-log")
+    ap.add_argument("--dbt-log")
+    ap.add_argument("--action", default="load_next")
+    args = ap.parse_args()
+
     OUT.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(DB), read_only=True)
 
@@ -74,12 +89,21 @@ def main() -> None:
         "next_file": next_file,
     }
 
+    logs = {
+        "generated_at": summary["generated_at"],
+        "action": args.action,
+        "loaded_file": loaded[-1] if (args.action == "load_next" and loaded) else None,
+        "python": read_log(args.python_log),
+        "dbt": read_log(args.dbt_log),
+    }
+
     for name, payload in [
         ("summary.json", summary),
         ("company.json", company),
         ("record_status.json", record_status),
         ("potential_duplicates.json", dupes),
         ("next_file.json", {"name": next_file, "rows": next_rows}),
+        ("logs.json", logs),
     ]:
         (OUT / name).write_text(json.dumps(payload, indent=1, default=str) + "\n")
         print(f"wrote docs/data/{name}")

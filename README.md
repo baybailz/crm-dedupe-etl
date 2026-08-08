@@ -18,6 +18,8 @@ which runs the pipeline for real on GitHub Actions — `load_next.py` picks up
 one file, `dbt build` dedupes and tests, the result tables publish back as
 JSON — then the page refreshes and highlights the newly imported companies.
 Duplicate records visibly get blocked; ambiguous ones get flagged for review.
+The **Run logs** tab replays the captured Python + dbt output from that exact
+CI run, and **How it works** diagrams the whole loop.
 
 (The button needs a fine-grained GitHub token with Actions read/write on this
 repo — the ⚙ icon on the page walks through it. Without one, the tables are
