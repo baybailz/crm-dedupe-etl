@@ -83,6 +83,17 @@
   /* ---------- pipeline ribbon ---------- */
   .pipe-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;
     box-shadow:var(--shadow-1);padding:20px 22px 16px;margin-bottom:14px;overflow:hidden;position:relative}
+  .pipehead{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    margin:-2px 0 16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+  .pipeh-l{flex:1;min-width:200px}
+  .pipetitle{font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3)}
+  .pipesub{font-size:13.5px;color:var(--ink2);margin-top:3px;line-height:1.45}
+  .pipesub b{color:var(--ink)}
+  .cta{white-space:nowrap;display:inline-flex;align-items:center;gap:9px}
+  .cta.attn{animation:attn 2.6s ease-in-out infinite}
+  @keyframes attn{0%,100%{box-shadow:0 4px 16px var(--ring)}
+                  50%{box-shadow:0 4px 16px var(--ring),0 0 0 7px color-mix(in srgb,var(--accent) 13%,transparent)}}
+  .cta .spin{border-color:currentColor;border-top-color:transparent}
   .pipe{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding-bottom:4px}
   .stage{flex:1;min-width:150px;display:flex;flex-direction:column;gap:7px;position:relative;
     padding:12px 14px;border-radius:13px;border:1px dashed transparent;transition:all .25s}
@@ -325,6 +336,13 @@
   </header>
 
   <section class="pipe-card">
+    <div class="pipehead">
+      <div class="pipeh-l">
+        <div class="pipetitle">Pipeline</div>
+        <div class="pipesub" id="pipeSub">—</div>
+      </div>
+      <button class="btn btn-primary cta" id="ctaBtn">Load</button>
+    </div>
     <div class="pipe" id="pipe"></div>
     <div class="queue" id="queue"></div>
     <div class="runline" id="runline" style="display:none"></div>
@@ -505,6 +523,8 @@ function pipe(){
     return `<span class="fchip ${cls}">${mark}<span class="mono">${esc(f)}.csv</span></span>`;
   }).join('');
 
+  cta();
+
   const rl = $('runline');
   if (runPhase === 'idle'){ rl.style.display = 'none'; }
   else {
@@ -512,6 +532,42 @@ function pipe(){
     rl.innerHTML = `${running ? '<span class="spin"></span>' : ''}<span>${runMsg}</span>` +
       (runLink ? `&nbsp;<a href="${runLink}" target="_blank" rel="noopener">view run ↗</a>` : '');
   }
+}
+
+/* the always-visible primary action — the whole demo hangs off this button */
+function cta(){
+  const s = D.summary, b = $('ctaBtn'), sub = $('pipeSub');
+  const total = s.files_loaded.length + s.files_pending.length;
+  b.classList.remove('attn');
+  b.disabled = false;
+
+  if (running){
+    b.innerHTML = '<span class="spin"></span>Running…';
+    b.disabled = true;
+    b.onclick = null;
+    sub.innerHTML = esc(runMsg);
+    return;
+  }
+  if (!s.next_file){
+    b.innerHTML = 'Reset demo <span class="arr">↺</span>';
+    b.onclick = confirmReset;
+    sub.innerHTML = `All <b>${total}</b> files loaded · <b>${fmtN(s.companies_total)}</b> companies in the CRM ·
+      <b>${fmtN(s.duplicates_blocked)}</b> duplicates blocked along the way`;
+    return;
+  }
+  const rows = (D.next.rows || []).length;
+  sub.innerHTML = `Next up: <b>${esc(s.next_file)}.csv</b>${rows ? ` (${rows} vendor records)` : ''} ·
+    ${s.files_pending.length} of ${total} files still to load`;
+
+  if (!token()){
+    b.innerHTML = 'Connect GitHub to load <span class="arr">⚙</span>';
+    b.onclick = () => $('tokenDlg').showModal();
+    b.classList.add('attn');
+    return;
+  }
+  b.innerHTML = `Load ${esc(s.next_file)}.csv <span class="arr">→</span>`;
+  b.onclick = () => runPipeline('load_next');
+  if (s.files_loaded.length === 0) b.classList.add('attn');
 }
 
 /* ================= KPIs ================= */
@@ -750,46 +806,47 @@ function panelLogs(){
 /* ---------- how-it-works panel ---------- */
 function panelHow(){
   const svg = `
-  <svg viewBox="0 0 1000 330" role="img" aria-label="Architecture: the console dispatches a GitHub Actions workflow that runs Python and dbt, commits JSON to the repository, and the page refreshes">
+  <svg viewBox="0 58 1000 252" role="img" aria-label="Architecture: the console dispatches a GitHub Actions workflow that runs Python and dbt, commits JSON to the repository, and the page refreshes">
     <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0 10 5 0 10z" fill="var(--ink3)"/></marker></defs>
 
     <rect class="hnode" x="28" y="118" width="180" height="94" rx="14"/>
     <text class="htext" x="118" y="152" text-anchor="middle">This console</text>
     <text class="hsub"  x="118" y="172" text-anchor="middle">GitHub Pages · static</text>
-    <text class="hsub"  x="118" y="188" text-anchor="middle">token stays in your browser</text>
+    <text class="hsub"  x="118" y="188" text-anchor="middle">token stays in browser</text>
 
-    <rect class="hgroup" x="282" y="76" width="482" height="178" rx="16"/>
+    <rect class="hgroup" x="282" y="76" width="490" height="168" rx="16"/>
     <text class="hlabel" x="298" y="100">GitHub Actions · ubuntu runner · one click = one real pipeline run</text>
 
-    <rect class="hnode" x="302" y="126" width="128" height="84" rx="12"/>
-    <text class="htext" x="366" y="158" text-anchor="middle">load_next.py</text>
-    <text class="hsub"  x="366" y="176" text-anchor="middle">picks up 1 file</text>
-    <text class="hsub"  x="366" y="191" text-anchor="middle">stamps lineage</text>
+    <rect class="hnode" x="302" y="122" width="128" height="92" rx="12"/>
+    <text class="htext" x="366" y="150" text-anchor="middle">load_next.py</text>
+    <text class="hsub"  x="366" y="170" text-anchor="middle">picks up 1 file</text>
+    <text class="hsub"  x="366" y="186" text-anchor="middle">stamps lineage</text>
 
-    <rect class="hnode hot" x="458" y="126" width="138" height="84" rx="12"/>
-    <text class="htext" x="527" y="154" text-anchor="middle">dbt build</text>
-    <text class="hsub"  x="527" y="172" text-anchor="middle">normalize · block</text>
-    <text class="hsub"  x="527" y="187" text-anchor="middle">score · classify · test</text>
+    <rect class="hnode hot" x="450" y="122" width="156" height="92" rx="12"/>
+    <text class="htext" x="528" y="150" text-anchor="middle">dbt build</text>
+    <text class="hsub"  x="528" y="170" text-anchor="middle">normalize · block</text>
+    <text class="hsub"  x="528" y="186" text-anchor="middle">score · classify</text>
+    <text class="hsub"  x="528" y="202" text-anchor="middle">+ data tests</text>
 
-    <rect class="hnode" x="624" y="126" width="120" height="84" rx="12"/>
-    <text class="htext" x="684" y="158" text-anchor="middle">export_json.py</text>
-    <text class="hsub"  x="684" y="176" text-anchor="middle">marts → JSON</text>
-    <text class="hsub"  x="684" y="191" text-anchor="middle">+ run logs</text>
+    <rect class="hnode" x="628" y="122" width="128" height="92" rx="12"/>
+    <text class="htext" x="692" y="150" text-anchor="middle">export_json.py</text>
+    <text class="hsub"  x="692" y="170" text-anchor="middle">marts → JSON</text>
+    <text class="hsub"  x="692" y="186" text-anchor="middle">+ run logs</text>
 
     <rect class="hnode" x="812" y="118" width="160" height="94" rx="14"/>
     <text class="htext" x="892" y="150" text-anchor="middle">Repository</text>
     <text class="hsub"  x="892" y="170" text-anchor="middle">docs/data/*.json</text>
     <text class="hsub"  x="892" y="186" text-anchor="middle">state · vendor seed</text>
 
-    <path class="hline flowing" d="M208 150 H282"/>
-    <text class="hlabel" x="245" y="138" text-anchor="middle">dispatch</text>
-    <path class="hline" d="M430 168 H452"/>
-    <path class="hline" d="M596 168 H618"/>
-    <path class="hline flowing" d="M764 165 H806"/>
-    <text class="hlabel" x="786" y="152" text-anchor="middle">commit</text>
-    <path class="hline flowing" d="M892 212 C892 302, 118 302, 118 218"/>
-    <text class="hlabel" x="505" y="290" text-anchor="middle">console polls the run, then pulls fresh tables + logs</text>
+    <path class="hline flowing" d="M208 165 H294"/>
+    <text class="hlabel" x="251" y="153" text-anchor="middle">dispatch</text>
+    <path class="hline" d="M430 168 H444"/>
+    <path class="hline" d="M606 168 H622"/>
+    <path class="hline flowing" d="M756 165 H806"/>
+    <text class="hlabel" x="783" y="153" text-anchor="middle">commit</text>
+    <path class="hline flowing" d="M892 212 C892 292, 118 292, 118 218"/>
+    <text class="hlabel" x="505" y="284" text-anchor="middle">console polls the run, then pulls fresh tables + logs</text>
   </svg>`;
   return `<div class="card">
     <div class="cardhead"><h2>how this demo works</h2>
@@ -929,17 +986,25 @@ function confirmReset(){
 }
 
 /* ================= wiring ================= */
+const TABS = ['company','incoming','log','dupes','logs','how'];
 $('tabs').addEventListener('click', e => {
   const t = e.target.closest('.tab'); if (!t) return;
-  currentTab = t.dataset.tab; render();
+  currentTab = t.dataset.tab;
+  history.replaceState(null, '', '#' + currentTab);
+  render();
 });
+addEventListener('hashchange', () => {
+  const h = location.hash.slice(1);
+  if (TABS.includes(h) && h !== currentTab){ currentTab = h; render(); }
+});
+{ const h = location.hash.slice(1); if (TABS.includes(h)) currentTab = h; }
 $('gearBtn').onclick = () => { $('tokenInput').value = token(); $('tokenDlg').showModal(); };
 $('tokenSave').onclick = () => {
   const v = $('tokenInput').value.trim();
   if (v){ localStorage.setItem('gh_token', v); toast('Token saved — you\'re wired up ⚡'); }
-  $('tokenDlg').close(); renderPanel();
+  $('tokenDlg').close(); render();
 };
-$('tokenClear').onclick = () => { localStorage.removeItem('gh_token'); $('tokenInput').value = ''; $('tokenDlg').close(); renderPanel(); };
+$('tokenClear').onclick = () => { localStorage.removeItem('gh_token'); $('tokenInput').value = ''; $('tokenDlg').close(); render(); };
 $('resetBtn').onclick = confirmReset;
 
 loadAll().catch(e => {
