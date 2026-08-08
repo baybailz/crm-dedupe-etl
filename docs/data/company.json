@@ -58,5 +58,29 @@
   "website": "www.coca-cola.com",
   "primary_contact": "Priya Patel",
   "record_source": "crm"
+ },
+ {
+  "company_id": 6,
+  "company_name": "Piedmont Coffee Co",
+  "address": "500 10th St NW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30318",
+  "phone_number": "404-555-0142",
+  "website": "piedmontcoffee.com",
+  "primary_contact": null,
+  "record_source": "list_a-006"
+ },
+ {
+  "company_id": 7,
+  "company_name": "Blue Heron Analytics",
+  "address": "890 Ponce de Leon Ave NE",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30306",
+  "phone_number": "404-555-0177",
+  "website": "blueheron.io",
+  "primary_contact": null,
+  "record_source": "list_a-007"
  }
 ]

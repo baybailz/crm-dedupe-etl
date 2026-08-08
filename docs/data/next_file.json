@@ -1,82 +1,82 @@
 {
- "name": "list_a",
+ "name": "list_b",
  "rows": [
   {
-   "company_name": "7-Eleven",
-   "address_1": "218 Peachtree Street Northwest",
+   "company_name": "7-11",
+   "address_1": "218 Peachtree NW",
    "address_2": "",
    "address_3": "",
    "city": "Atlanta",
    "state": "GA",
-   "zip": "30303",
-   "website": "7-eleven.com",
+   "zip": "",
+   "website": "",
    "primary_phone_number": "404-555-0100"
   },
   {
-   "company_name": "711",
-   "address_1": "218 Peachtree St NW",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "website": "",
-   "primary_phone_number": "4045550100"
-  },
-  {
-   "company_name": "7-Eleven, Inc.",
-   "address_1": "218 Peachtree St",
-   "address_2": "Suite 100",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "website": "www.7-eleven.com",
-   "primary_phone_number": ""
-  },
-  {
-   "company_name": "7-Eleven",
-   "address_1": "1234 Peachtree St SE",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "website": "",
-   "primary_phone_number": "404-555-0199"
-  },
-  {
-   "company_name": "The Home Depot",
-   "address_1": "2455 Paces Ferry Rd Southeast",
+   "company_name": "Home Depot #123",
+   "address_1": "2455 Paces Ferry Rd SE",
    "address_2": "",
    "address_3": "",
    "city": "Atlanta",
    "state": "GA",
    "zip": "30339",
-   "website": "homedepot.com",
-   "primary_phone_number": "(770) 433-8211"
+   "website": "",
+   "primary_phone_number": "770.433.8211"
   },
   {
-   "company_name": "Piedmont Coffee Co",
+   "company_name": "Piedmont Coffee",
    "address_1": "500 10th St NW",
    "address_2": "",
    "address_3": "",
    "city": "Atlanta",
    "state": "GA",
    "zip": "30318",
-   "website": "piedmontcoffee.com",
-   "primary_phone_number": "404-555-0142"
+   "website": "www.piedmontcoffee.com",
+   "primary_phone_number": ""
   },
   {
-   "company_name": "Blue Heron Analytics",
-   "address_1": "890 Ponce de Leon Ave NE",
+   "company_name": "Delta Airlines",
+   "address_1": "1030 Delta Blvd",
    "address_2": "",
    "address_3": "",
    "city": "Atlanta",
    "state": "GA",
-   "zip": "30306",
-   "website": "blueheron.io",
-   "primary_phone_number": "404-555-0177"
+   "zip": "30354",
+   "website": "delta.com",
+   "primary_phone_number": "404-715-2600"
+  },
+  {
+   "company_name": "Sunrise Bakery",
+   "address_1": "77 Marietta St NW",
+   "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "website": "sunrisebakeryatl.com",
+   "primary_phone_number": "404-555-0161"
+  },
+  {
+   "company_name": "Sunrise Bakery LLC",
+   "address_1": "77 Marietta Street NW",
+   "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "website": "",
+   "primary_phone_number": "404-555-0161"
+  },
+  {
+   "company_name": "Rockdale Paper Supply",
+   "address_1": "1100 Sigman Road",
+   "address_2": "",
+   "address_3": "",
+   "city": "Conyers",
+   "state": "GA",
+   "zip": "30012",
+   "website": "rockdalepaper.com",
+   "primary_phone_number": "770-555-0128"
   }
  ]
 }
