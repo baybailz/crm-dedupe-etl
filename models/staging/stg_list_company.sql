@@ -1,21 +1,9 @@
--- Both purchased lists, unioned, with a stable record key per row and the
--- same normalized match keys as the CRM side. In production the ingest step
--- stamps source filename + line number; for the seed-based demo we derive a
--- deterministic row number instead.
-with unioned as (
-    select 'list_a' as source_file, * from {{ ref('list_a') }}
-    union all
-    select 'list_b' as source_file, * from {{ ref('list_b') }}
-),
-
-numbered as (
-    select
-        *,
-        row_number() over (
-            partition by source_file
-            order by company_name, address_1, city
-        ) as row_num
-    from unioned
+-- All vendor-list records loaded so far (seeds/vendor_records.csv, generated
+-- by scripts/load_next.py from the files in incoming/), with a stable record
+-- key of source file + original file row number, and the same normalized
+-- match keys as the CRM side.
+with src as (
+    select * from {{ ref('vendor_records') }}
 ),
 
 normalized as (
@@ -41,7 +29,7 @@ normalized as (
         left({{ digits_only('zip') }}, 5)            as zip5,
         right({{ digits_only('primary_phone_number') }}, 10) as phone10,
         {{ url_domain('website') }}                  as domain
-    from numbered
+    from src
 )
 
 select

@@ -4,10 +4,24 @@ An ETL pipeline that imports two purchased company lists into a CRM without
 creating duplicates. Built with **dbt + SQL** (Snowflake as the target
 warehouse, DuckDB for a zero-cost local demo) and **Python** for file ingest.
 
-The scenario: the CRM has a `company` table. Sales bought two vendor CSV lists.
+The scenario: the CRM has a `company` table. Sales bought vendor CSV lists.
 We must (1) report potential duplicates between the files and against the CRM,
 (2) import only non-duplicated records, and (3) produce a status for every
 record in both files.
+
+## Live demo
+
+**https://baybailz.github.io/crm-dedupe-etl/** — an import console that shows
+the CRM table, previews the next raw vendor file, and loads files one at a
+time. The Load button dispatches the [pipeline workflow](.github/workflows/pipeline.yml),
+which runs the pipeline for real on GitHub Actions — `load_next.py` picks up
+one file, `dbt build` dedupes and tests, the result tables publish back as
+JSON — then the page refreshes and highlights the newly imported companies.
+Duplicate records visibly get blocked; ambiguous ones get flagged for review.
+
+(The button needs a fine-grained GitHub token with Actions read/write on this
+repo — the ⚙ icon on the page walks through it. Without one, the tables are
+still live; trigger loads from the Actions tab instead.)
 
 ## The hard part, in one example
 
@@ -87,21 +101,25 @@ re-running the pipeline never double-inserts.
 
 ```text
 record_key  company_name           status                 matched
-list_a-001  7-Eleven (1234 Pchtr)  needs_review           CRM 1: 7-Eleven
-list_a-002  7-Eleven               duplicate_of_crm       CRM 1: 7-Eleven
-list_a-003  7-Eleven, Inc.         duplicate_of_crm       CRM 1: 7-Eleven
-list_a-004  711                    duplicate_of_crm       CRM 1: 7-Eleven
-list_a-005  Blue Heron Analytics   new
+list_a-001  7-Eleven               duplicate_of_crm       CRM 1: 7-Eleven
+list_a-002  711                    duplicate_of_crm       CRM 1: 7-Eleven
+list_a-003  7-Eleven, Inc.        duplicate_of_crm       CRM 1: 7-Eleven
+list_a-004  7-Eleven (1234 Pchtr)  needs_review           CRM 1: 7-Eleven
+list_a-005  The Home Depot         duplicate_of_crm       CRM 2: Home Depot
 list_a-006  Piedmont Coffee Co     new
-list_a-007  The Home Depot         duplicate_of_crm       CRM 2: Home Depot
+list_a-007  Blue Heron Analytics   new
 list_b-001  7-11                   duplicate_of_crm       CRM 1: 7-Eleven
-list_b-002  Delta Airlines         duplicate_of_crm       CRM 3: Delta Air Lines
-list_b-003  Home Depot #123        duplicate_of_crm       CRM 2: Home Depot
-list_b-004  Piedmont Coffee        duplicate_cross_file   list_a-006
-list_b-005  Rockdale Paper Supply  new
-list_b-006  Sunrise Bakery         new
-list_b-007  Sunrise Bakery LLC     duplicate_within_file  list_b-006
+list_b-002  Home Depot #123        duplicate_of_crm       CRM 2: Home Depot
+list_b-003  Piedmont Coffee        duplicate_cross_file   list_a-006
+list_b-004  Delta Airlines         duplicate_of_crm       CRM 3: Delta Air Lines
+list_b-005  Sunrise Bakery         new
+list_b-006  Sunrise Bakery LLC     duplicate_within_file  list_b-005
+list_b-007  Rockdale Paper Supply  new
 ```
+
+Two further files (`list_c`, `list_d`) exercise the incremental story: records
+that duplicate companies imported from *earlier* files get blocked too, and a
+second `7-Eleven` at a brand-new address routes to review, not auto-merge.
 
 `potential_duplicates` — the pair-level report for the sales team, with
 similarity scores and what each record matched.
@@ -113,9 +131,14 @@ vendor-list schema (3 address lines) to the CRM schema, with new company IDs.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/dbt build          # seeds + models + 11 data tests against DuckDB
+.venv/bin/python scripts/load_next.py     # pick up the next vendor file
+.venv/bin/dbt build --full-refresh        # seeds + models + data tests (DuckDB)
 .venv/bin/python -c "import duckdb; print(duckdb.connect('crm_dedupe.duckdb').sql('select * from record_status'))"
 ```
+
+Repeat `load_next.py` + `dbt build` to load the remaining files one at a time;
+`--action reset` starts over. The same two commands are exactly what the
+GitHub Actions workflow runs behind the demo page's button.
 
 ## Run it on Snowflake
 
