@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_list_company
+    description: Both purchased lists unioned, with normalized match keys.
+    columns:
+      - name: record_key
+        tests: [unique, not_null]
+
+  - name: int_scored_pairs
+    description: Blocked candidate pairs with fuzzy scores and classification.
+
+  - name: potential_duplicates
+    description: Suspect pairs to send to the sales team.
+
+  - name: record_status
+    description: Disposition of every record from both vendor files.
+    columns:
+      - name: record_key
+        tests: [unique, not_null]
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - new
+                - duplicate_of_crm
+                - duplicate_within_file
+                - duplicate_cross_file
+                - needs_review
+
+  - name: companies_to_import
+    description: Deduplicated new companies mapped to the CRM schema.
+    columns:
+      - name: company_id
+        tests: [unique, not_null]
+      - name: company_name
+        tests: [not_null]
+
+  - name: company_post_import
+    description: CRM company table as it stands after the import.
+    columns:
+      - name: company_id
+        tests: [unique, not_null]

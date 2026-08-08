@@ -1,0 +1,6 @@
+company_id,company_name,address,city,state,zip,phone_number,website,primary_contact
+1,7-Eleven,218 Peachtree Street NW,Atlanta,GA,30303,(404) 555-0100,www.7-eleven.com,Jane Smith
+2,Home Depot,2455 Paces Ferry Road SE,Atlanta,GA,30339,770-433-8211,www.homedepot.com,Mike Jones
+3,Delta Air Lines,1030 Delta Boulevard,Atlanta,GA,30354,(404) 715-2600,www.delta.com,Ana Ruiz
+4,Chick-fil-A,5200 Buffington Road,Atlanta,GA,30349,(404) 765-8000,www.chick-fil-a.com,Sam Carter
+5,Coca-Cola,1 Coca-Cola Plaza NW,Atlanta,GA,30313,(404) 676-2121,www.coca-cola.com,Priya Patel
