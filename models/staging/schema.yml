@@ -1,0 +1,16 @@
+# Staging contracts. One row per source record, match keys never blank
+# (enforced by tests/assert_match_keys_present.sql).
+version: 2
+
+models:
+  - name: stg_company
+    description: Master company data with normalized match keys.
+    columns:
+      - name: company_id
+        tests: [unique, not_null]
+
+  - name: stg_purchased_company
+    description: Purchased vendor records with the same match keys.
+    columns:
+      - name: record_key
+        tests: [unique, not_null]

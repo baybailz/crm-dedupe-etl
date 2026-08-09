@@ -3,8 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Vendor-list dedupe ETL — presentation + live console. Python, dbt, DuckDB/Snowflake, GitHub Actions.">
-<title>Vendor List Import — ETL Demo</title>
+<meta name="description" content="Import two vendor lists, create zero duplicates. A live dedupe pipeline: Python, dbt, DuckDB/Snowflake, GitHub Actions.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Company Data Pipeline">
+<meta property="og:title" content="Import two vendor lists. Create zero duplicates.">
+<meta property="og:description" content="A live dedupe pipeline you can run from the page: Python stages a file, dbt blocks and scores every candidate pair, GitHub Actions publishes the result.">
+<meta property="og:url" content="https://baybailz.github.io/crm-dedupe-etl/">
+<meta property="og:image" content="https://baybailz.github.io/crm-dedupe-etl/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Import two vendor lists. Create zero duplicates. python, dbt, duckdb/snowflake, github actions, jaro-winkler.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Import two vendor lists. Create zero duplicates.">
+<meta name="twitter:description" content="A live dedupe pipeline you can run from the page: Python, dbt, DuckDB/Snowflake, GitHub Actions.">
+<meta name="twitter:image" content="https://baybailz.github.io/crm-dedupe-etl/og.png">
+<title>Company Data Pipeline</title>
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%23016698"/><path d="M36 10 18 36h11l-3 18 20-28H34l2-16z" fill="white"/></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +29,7 @@
     --ink:#14171d; --ink2:#4e5a66; --ink3:#8593a0;
     --border:#e1e6ec; --border2:#ccd6de;
     --accent:#016698; --accent-2:#0a89c4; --accent-deep:#313366; --on-accent:#ffffff;
+    --trn-c:#0d8f9c;
     --accent-soft:rgba(1,102,152,.08);
     --good:#137a3d; --good-soft:#e3f5ea; --good-line:#9ed9b5;
     --warn:#945500; --warn-soft:#fcf2dc; --warn-line:#ecca84;
@@ -32,6 +46,7 @@
     --ink:#e8ecf1; --ink2:#a4aeba; --ink3:#6c7684;
     --border:#222a36; --border2:#2f3a49;
     --accent:#4fb2e2; --accent-2:#7cc7ec; --accent-deep:#7b9bd6; --on-accent:#08131c;
+    --trn-c:#56c5d0;
     --accent-soft:rgba(79,178,226,.10);
     --good:#57d58a; --good-soft:#0f2a1a; --good-line:#1e5c38;
     --warn:#f5c04a; --warn-soft:#2b2210; --warn-line:#6b5320;
@@ -103,6 +118,7 @@
   .cols{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:26px;align-items:start}
   @media (max-width:880px){.cols{grid-template-columns:1fr}}
   .pointlist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:13px}
+  .slide h2 + .pointlist{margin-top:30px}
   .pointlist li{display:flex;gap:12px;font-size:14px;color:var(--ink2);line-height:1.55}
   .pointlist b{color:var(--ink)}
   .pt{width:26px;height:26px;border-radius:8px;flex:none;display:grid;place-items:center;
@@ -111,7 +127,9 @@
 
   /* title slide */
   .titleslide{display:flex;flex-direction:column;justify-content:center;min-height:100%;max-width:860px}
-  .titleslide h2{font-size:clamp(30px,4.6vw,52px)}
+  .titleslide h2{font-size:clamp(30px,4.6vw,52px);
+    background:linear-gradient(115deg,var(--ink) 35%,var(--accent) 78%,var(--accent-2) 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .stackchips{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 30px}
   .schip{font-family:"JetBrains Mono",monospace;font-size:12.5px;font-weight:600;
     border:1px solid var(--border2);border-radius:99px;padding:6px 14px;color:var(--ink2)}
@@ -130,17 +148,76 @@
     overflow:hidden;box-shadow:var(--shadow-1)}
   .codebar{display:flex;gap:6.5px;align-items:center;padding:10px 15px;
     background:rgba(255,255,255,.03);border-bottom:1px solid var(--code-border)}
-  .tdot{width:10px;height:10px;border-radius:50%;flex:none}
-  .tdot.r{background:#ff5f57}.tdot.y{background:#febc2e}.tdot.g{background:#28c840}
-  .codetitle{color:#8fa0b8;font-size:12px;margin-left:8px;
+  .codetitle{color:#8fa0b8;font-size:12px;
     font-family:"JetBrains Mono",monospace;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
   .codetitle .dim{color:#54627a}
-  .codebody{padding:15px 18px;overflow:auto;max-height:520px;
+  .codebody{padding:15px 0 15px 0;overflow:auto;max-height:520px;
     font-family:"JetBrains Mono",monospace;font-size:12.4px;line-height:1.66;
-    color:#c4cee0;white-space:pre;tab-size:4}
+    color:#c4cee0;tab-size:4}
+  .cline{display:flex;white-space:pre}
+  .cline:hover{background:rgba(255,255,255,.025)}
+  .cno{flex:none;width:46px;padding-right:14px;text-align:right;color:#3f4b60;
+    user-select:none;-webkit-user-select:none}
+  .ctxt{flex:1;min-width:0;padding-right:18px}
   .c-kw{color:#6cb8e8}.c-str{color:#8fd49a}.c-com{color:#586a85;font-style:italic}
   .c-num{color:#e8b568}.c-jinja{color:#5fc7d0}.c-fn{color:#c0aef5}.c-key{color:#6cb8e8}
   .c-mark{background:rgba(1,102,152,.28);border-radius:3px;padding:0 2px}
+
+  /* VS Code-style explorer + editor */
+  .ide{display:flex;align-items:stretch;background:var(--code-bg);
+    border:1px solid var(--code-border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-1)}
+  .ide .code{flex:1;min-width:0;border:0;border-left:1px solid var(--code-border);
+    border-radius:0;box-shadow:none}
+  .ide .codebody{font-size:11.9px;max-height:540px}
+  .fx{width:262px;flex:none;background:#090d15;display:flex;flex-direction:column}
+  .fxhead{padding:11px 16px 7px;font-size:9.5px;font-weight:800;letter-spacing:.14em;
+    color:#4d5a72;font-family:"Inter",sans-serif}
+  .fxrepo{padding:0 16px 8px;font-size:11.5px;font-weight:700;color:#8b96ac;
+    font-family:"JetBrains Mono",monospace}
+  .fxbody{overflow:auto;padding:0 8px 12px}
+  .fxrow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;
+    background:none;font-family:"JetBrains Mono",monospace;font-size:12px;color:#8b96ac;
+    padding:4.5px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .12s}
+  .fxrow:hover{background:#121926;color:#c7d0e0}
+  .fxrow.dir{color:#5f6c85;cursor:default;font-weight:600;background:none}
+  .fxrow.on{background:rgba(1,102,152,.26);color:#e9eef7;box-shadow:inset 2.5px 0 0 var(--accent)}
+  .fico{width:8px;height:8px;border-radius:2.5px;flex:none}
+  .fico.sql{background:#6cb8e8}.fico.yml{background:#e8b568}.fico.py{background:#5fc7d0}.fico.csv{background:#8fd49a}
+  .ide.tall{height:calc(100vh - 470px);min-height:440px}
+  .ide.tall .code{display:flex;flex-direction:column}
+  .ide.tall .codebody{max-height:none;flex:1}
+  .barbtns{margin-left:auto;display:flex;gap:6px;align-items:center}
+  .idemax{width:24px;height:24px;flex:none;
+    display:grid;place-items:center;background:transparent;border:1px solid #2a3346;
+    border-radius:6px;color:#8b96ac;cursor:pointer;padding:0;transition:all .15s}
+  .idemax:hover{color:#e6ebf5;border-color:var(--accent)}
+  .idemax svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;
+    stroke-linecap:round;stroke-linejoin:round;display:block}
+  .ide.full{position:fixed;inset:14px;z-index:80;height:auto;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+  .ide.full .code{display:flex;flex-direction:column}
+  .ide.full .codebody{max-height:none;flex:1;font-size:12.6px}
+  .ide.full .fx{width:272px}
+  .ide.full .fxrow{font-size:12px}
+  html.noscroll{overflow:hidden}
+  .codebody,.fxbody{overscroll-behavior:contain}
+  .dtable{border-collapse:collapse;white-space:nowrap;font-size:11.5px;
+    font-family:"JetBrains Mono",monospace}
+  .dtable th{color:#7e8aa0;text-align:left;padding:2px 12px 8px 0;font-size:9.5px;
+    font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    border-bottom:1px solid #1d2b40}
+  .dtable td{padding:4px 12px 4px 0;border-bottom:1px solid #131a28;color:#c4cee0;
+    font-variant-numeric:tabular-nums}
+  .dtable tr:last-child td{border-bottom:0}
+  .dempty{color:#5b6478;font-family:"JetBrains Mono",monospace;font-size:12px}
+  .ide.mini .fx{width:196px}
+  .ide.mini .fxhead{padding:10px 14px 6px}
+  .ide.mini .fxrow{font-size:11.3px;padding:4px 7px;gap:7px}
+  .ide.mini .codebody{font-size:11.4px;max-height:430px}
+  @media (max-width:880px){
+    .ide{flex-direction:column}
+    .fx{width:100%;max-height:190px;border-bottom:1px solid var(--code-border)}
+    .ide .code{border-left:0}
+  }
 
   /* lineage + diagrams */
   .diagram{overflow-x:auto}
@@ -154,22 +231,28 @@
   .hline{stroke:var(--ink3);stroke-width:1.6;fill:none;marker-end:url(#arr)}
   .hline.flowing{stroke:var(--accent);stroke-dasharray:6 6;animation:dash 1.1s linear infinite}
   @keyframes dash{to{stroke-dashoffset:-12}}
+  .arch-svg .outer{transition:opacity .35s ease}
+  .arch-svg.zoomed .outer{opacity:.1}
+  .zoombtn{position:absolute;top:6px;right:6px;display:inline-flex;gap:7px;align-items:center;
+    font:inherit;font-size:12px;font-weight:650;color:var(--ink2);background:var(--surface);
+    border:1px solid var(--border2);border-radius:99px;padding:6px 14px;cursor:pointer;
+    box-shadow:var(--shadow-1);transition:all .15s}
+  .zoombtn:hover{color:var(--accent);border-color:var(--accent)}
   .dagnode{stroke-width:1.3;rx:10}
   .dagtext{font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:600;fill:var(--ink)}
   .dagtag{font-family:"Inter",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.08em;fill:var(--ink3)}
   .dagline{fill:none;stroke:var(--border2);stroke-width:1.4;marker-end:url(#arr2)}
-  .dagline.main{stroke:var(--accent);stroke-width:1.8}
   .n-seed{fill:var(--surface2);stroke:var(--border2)}
   .n-stg{fill:color-mix(in srgb,var(--accent) 7%,var(--surface));stroke:var(--accent-2)}
-  .n-int{fill:color-mix(in srgb,var(--accent) 14%,var(--surface));stroke:var(--accent)}
-  .n-mart{fill:color-mix(in srgb,var(--accent-deep) 13%,var(--surface));stroke:var(--accent-deep)}
+  .n-int{fill:color-mix(in srgb,var(--trn-c) 13%,var(--surface));stroke:var(--trn-c)}
+  .n-dim{fill:color-mix(in srgb,var(--accent-deep) 13%,var(--surface));stroke:var(--accent-deep)}
   .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--ink2)}
   .legend span{display:inline-flex;align-items:center;gap:7px}
   .sw{width:12px;height:12px;border-radius:4px;border:1.4px solid}
   .sw.seed{background:var(--surface2);border-color:var(--border2)}
   .sw.stg{background:color-mix(in srgb,var(--accent) 7%,var(--surface));border-color:var(--accent-2)}
-  .sw.int{background:color-mix(in srgb,var(--accent) 14%,var(--surface));border-color:var(--accent)}
-  .sw.mart{background:color-mix(in srgb,var(--accent-deep) 13%,var(--surface));border-color:var(--accent-deep)}
+  .sw.int{background:color-mix(in srgb,var(--trn-c) 13%,var(--surface));border-color:var(--trn-c)}
+  .sw.dim{background:color-mix(in srgb,var(--accent-deep) 13%,var(--surface));border-color:var(--accent-deep)}
 
   /* deck controls */
   .deckbar{display:flex;align-items:center;gap:14px;margin-top:14px}
@@ -201,33 +284,57 @@
   .pipesub b{color:var(--ink)}
   .cta{white-space:nowrap;display:inline-flex;align-items:center;gap:9px}
   .cta.attn{animation:attn 2.6s ease-in-out infinite}
+  .btn-primary.locked{background:var(--surface2);color:var(--ink3);border:1px solid var(--border2);
+    box-shadow:none;cursor:default;font-weight:650}
+  .btn-primary.locked:hover{transform:none;box-shadow:none}
+  .btn-primary.locked{position:relative;overflow:hidden;isolation:isolate}
+  .btn-primary.locked::after{content:"";position:absolute;inset:0;z-index:-1;
+    background:#e0484c;opacity:0;transition:opacity .5s ease-out}
+  .btn-primary.locked.deny::after{opacity:var(--deny,.12);transition:opacity .07s ease-in}
+  .btn-primary.locked.deny{transform:scale(.986);transition:transform .07s ease-in}
+  html.dark .btn-primary.locked{background:var(--surface2);color:var(--ink3);
+    border:1px solid var(--border2);box-shadow:none}
+  .btn-primary.locked svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;
+    stroke-linecap:round;stroke-linejoin:round;margin-right:8px;vertical-align:-2px}
+  .only{margin-left:9px;padding-left:9px;border-left:1px solid var(--border2);
+    font-size:11.5px;font-weight:600;color:var(--ink3);letter-spacing:.02em}
   @keyframes attn{0%,100%{box-shadow:0 4px 16px var(--ring)}
                   50%{box-shadow:0 4px 16px var(--ring),0 0 0 7px color-mix(in srgb,var(--accent) 13%,transparent)}}
   .cta .spin{border-color:currentColor;border-top-color:transparent}
-  .pipe{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding-bottom:4px}
-  .stage{flex:1;min-width:150px;display:flex;flex-direction:column;gap:7px;position:relative;
-    padding:12px 14px;border-radius:13px;border:1px dashed transparent;transition:all .25s}
-  .stage .t{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px;color:var(--ink2)}
-  .stage .t svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-  .stage .d{font-size:12px;color:var(--ink3);line-height:1.45}
-  .stage.active{border-color:var(--accent);background:var(--accent-soft)}
-  .stage.active .t{color:var(--accent)}
-  .stage.done .t{color:var(--good)}
-  .stage.fail{border-color:var(--bad);background:var(--bad-soft)}
-  .stage.fail .t{color:var(--bad)}
-  .conn{width:34px;flex:none;position:relative;align-self:center;height:2px;margin:0 2px;
-    background:repeating-linear-gradient(90deg,var(--border2) 0 5px,transparent 5px 10px)}
-  .conn.flow{background:repeating-linear-gradient(90deg,var(--accent) 0 5px,transparent 5px 10px);
-    animation:flowh .5s linear infinite}
-  @keyframes flowh{to{background-position:10px 0}}
-  .spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);
-    border-top-color:transparent;animation:spin .7s linear infinite;flex:none;display:inline-block}
-  @keyframes spin{to{transform:rotate(360deg)}}
+  .pipe{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .logcol{padding:10px 18px;border-left:1px solid var(--border);min-width:0;
+    transition:background .25s}
+  .logcol:first-child{border-left:0;padding-left:2px}
+  .lch{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:800;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+  .lcs{width:7px;height:7px;border-radius:50%;background:var(--border2);flex:none}
+  .logcol.done .lcs{background:var(--good)}
+  .logcol.done .lch{color:var(--ink2)}
+  .logcol.active .lcs{background:var(--accent);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+  .logcol.active .lch{color:var(--accent)}
+  .logcol.active{background:var(--accent-soft)}
+  .lcl{font-family:"JetBrains Mono",monospace;font-size:11.6px;line-height:1.6;
+    color:var(--ink2);margin-top:7px;word-break:break-word}
+  .lcl .ok{color:var(--good)}
+  .lcl .dim{color:var(--ink3)}
   .runline{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink2);
     border-top:1px solid var(--border);margin-top:12px;padding-top:12px}
   .runline a{color:var(--accent);font-weight:600;text-decoration:none}
   .runline a:hover{text-decoration:underline}
-  .queue{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .piperow{display:flex;align-items:stretch;gap:16px}
+  .srcbox{width:150px;flex:none;padding-right:16px;border-right:1px dashed var(--border2);
+    display:flex;flex-direction:column;gap:8px}
+  .srclabel{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink3);padding-top:12px}
+  .queue{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+  .fchip.flying{position:fixed;z-index:70;margin:0;pointer-events:none;
+    box-shadow:0 8px 26px var(--ring)}
+  @media (max-width:820px){
+    .piperow{flex-direction:column}
+    .srcbox{width:100%;padding:0 0 14px;border-right:0;border-bottom:1px dashed var(--border2)}
+    .queue{flex-direction:row;flex-wrap:wrap}
+  }
   .fchip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
     border:1px solid var(--border);background:var(--surface2);color:var(--ink2);
     border-radius:99px;padding:4.5px 12px}
@@ -237,26 +344,14 @@
     animation:pulse 1.2s ease-in-out infinite}
   @keyframes pulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 12%,transparent)}}
 
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:22px}
-  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:15px;
-    padding:15px 17px;box-shadow:var(--shadow-1);position:relative;overflow:hidden}
-  .kpi::after{content:"";position:absolute;inset:0 0 auto 0;height:2.5px;opacity:.85;
-    background:linear-gradient(90deg,var(--kc,var(--accent)),transparent 85%)}
-  .kpi .n{font-size:27px;font-weight:760;letter-spacing:-.03em;font-variant-numeric:tabular-nums;
-    display:flex;align-items:baseline;gap:8px}
-  .kpi .l{font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-top:3px}
-  .delta{font-size:12px;font-weight:700;border-radius:99px;padding:1.5px 8px;
-    color:var(--good);background:var(--good-soft);animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
-  .delta.dwarn{color:var(--warn);background:var(--warn-soft)}
-  @keyframes pop{from{transform:scale(.4);opacity:0}}
-
   .tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);
     border-radius:13px;padding:4px;width:max-content;max-width:100%;overflow-x:auto;margin-bottom:14px}
   .tab{border:0;background:none;color:var(--ink2);font:inherit;font-size:13px;font-weight:650;
     padding:8px 15px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:color .15s}
   .tab:hover{color:var(--ink)}
   .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-1)}
-  .tab .cnt{color:var(--ink3);font-weight:550;margin-left:6px;font-size:12px;font-variant-numeric:tabular-nums}
+  .tab .cnt{color:var(--ink3);font-weight:550;margin-left:7px;font-size:11.5px;font-variant-numeric:tabular-nums}
+  .tab .mono{font-size:12.5px;letter-spacing:-.01em}
 
   .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;
     box-shadow:var(--shadow-1);overflow:hidden;animation:rise .3s ease}
@@ -292,12 +387,13 @@
   tr.rownew td{animation:flash 3s ease-out}
   @keyframes flash{0%,55%{background:var(--good-soft)}100%{background:transparent}}
   tr.rowimp td{background:color-mix(in srgb,var(--accent) 5%,transparent)}
+  tr.rowdup td{background:color-mix(in srgb,var(--warn) 7%,transparent)}
+  tr.rowdup td:first-child{box-shadow:inset 2px 0 0 var(--warn)}
 
   .badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
     border-radius:99px;padding:3px 11px;white-space:nowrap;border:1px solid transparent}
   .badge svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
   .b-new{color:var(--good);background:var(--good-soft);border-color:var(--good-line)}
-  .b-review{color:var(--warn);background:var(--warn-soft);border-color:var(--warn-line)}
   .b-dup{color:var(--dup);background:var(--dup-soft);border-color:var(--dup-line)}
   .b-crm{color:var(--ink3);background:var(--surface2);border-color:var(--border)}
   .meter{display:inline-flex;align-items:center;gap:9px}
@@ -320,27 +416,9 @@
   .btn-primary:hover:not(:disabled) .arr{transform:translateX(3px)}
   .btn-ghost{background:none;color:var(--ink2);border:1px solid var(--border2)}
   .btn-ghost:hover{color:var(--ink);border-color:var(--ink3)}
-  .loadnote{color:var(--ink2);font-size:12.5px;max-width:430px;line-height:1.5}
   .empty{padding:64px 24px;text-align:center;color:var(--ink2)}
   .empty .big{font-size:36px;margin-bottom:10px}
   .empty .btn{margin-top:16px}
-
-  .term{background:#0b0e15;border:1px solid #222a3c;border-radius:14px;overflow:hidden;
-    box-shadow:var(--shadow-1);margin:14px 20px}
-  .term:last-child{margin-bottom:20px}
-  .termbar{display:flex;gap:6.5px;align-items:center;padding:10px 15px;
-    background:#10141f;border-bottom:1px solid #222a3c}
-  .termtitle{color:#96a0b5;font-size:12px;margin-left:8px;
-    font-family:"JetBrains Mono",monospace;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-  .termtitle .dim{color:#5b6478}
-  .termbody{padding:14px 17px;overflow:auto;max-height:360px;
-    font-family:"JetBrains Mono",monospace;font-size:12.3px;line-height:1.66;
-    color:#c3cbdc;white-space:pre-wrap;word-break:break-word}
-  .tl{display:block;opacity:0;animation:lineIn .18s ease forwards;animation-delay:var(--d,0ms)}
-  @keyframes lineIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
-  .lg-dim{color:#5b6478}.lg-good{color:#5fd68b}.lg-bad{color:#ff7b7b;font-weight:600}
-  .lg-warn{color:#f5c04a}.lg-cyan{color:#6fc7ee}.lg-vio{color:#9fb2f5}.lg-pink{color:#6fd6c8}
-  .lg-strong{color:#e9edf6;font-weight:600}
 
   dialog{border:1px solid var(--border);border-radius:18px;background:var(--surface);color:var(--ink);
     box-shadow:var(--shadow-2);max-width:500px;width:calc(100vw - 40px);padding:26px}
@@ -372,17 +450,31 @@
     .hline.flowing,.conn.flow,.fchip.loading,.dagline{animation:none}
   }
   @media (max-width:640px){
-    .wrap{padding:16px 12px 70px}
+    .wrap{padding:16px 14px 70px}
+    .sub{font-size:11.5px}
+    h1{font-size:17px}
+    .hmeta{flex:1;min-width:0}
+    header .spacer{display:none}
+    header{gap:10px}
     .modes{order:5;width:100%;justify-content:stretch}
     .mode{flex:1}
-    .pipe{flex-direction:column}
+    .slide{padding:22px 18px}
+    .deckbar{flex-wrap:wrap;gap:10px}
+    .deckbar .navbtn.primary{margin-left:auto}
+    .dots{order:5;width:100%;justify-content:center;margin:4px 0 0}
+    .slidecount{order:6;width:100%;text-align:center}
+    .keyhint{display:none}
+    .pipe{grid-template-columns:1fr}
+    .logcol{border-left:0;border-top:1px solid var(--border);padding:10px 2px}
+    .logcol:first-child{border-top:0;padding-top:2px}
+    .ide.tall{height:auto;min-height:0}
+    .ide .fx{max-height:148px}
+    .ide .codebody{max-height:50vh}
+    .cno{width:34px;padding-right:10px}
+    .codebody{font-size:11.4px}
+    .cols{gap:18px}
     .conn{width:2px;height:22px;margin:2px 0 2px 26px;align-self:flex-start;
       background:repeating-linear-gradient(180deg,var(--border2) 0 5px,transparent 5px 10px)}
-    .conn.flow{background:repeating-linear-gradient(180deg,var(--accent) 0 5px,transparent 5px 10px);
-      animation:flowv .5s linear infinite}
-    @keyframes flowv{to{background-position:0 10px}}
-    .deckbar{flex-wrap:wrap}
-    .keyhint{display:none}
   }
 </style>
 </head>
@@ -392,17 +484,16 @@
 
   <header>
     <div class="logo"><svg viewBox="0 0 64 64"><path d="M36 8 16 37h12l-4 19 22-30H33l3-18z"/></svg></div>
-    <div>
-      <h1>Vendor List Import</h1>
-      <div class="sub">dedupe ETL · <span class="mono">python → dbt → duckdb</span></div>
+    <div class="hmeta">
+      <h1>Company Data Pipeline</h1>
+      <div class="sub">Engineering exercise · Bailey Thompson</div>
     </div>
     <div class="spacer"></div>
     <nav class="modes" id="modes">
       <button class="mode" data-mode="present">Presentation</button>
-      <button class="mode" data-mode="console">Console</button>
+      <button class="mode" data-mode="console">Demo</button>
     </nav>
     <div class="spacer"></div>
-    <div class="pill" id="freshPill"><span class="dot"></span><span id="freshText">loading…</span></div>
     <button class="iconbtn" id="themeBtn" title="Toggle theme">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5 5l1.6 1.6M17.4 17.4 19 19M19 5l-1.6 1.6M6.6 17.4 5 19"/></svg>
     </button>
@@ -414,7 +505,6 @@
   <main id="main"></main>
 
   <footer>
-    <span>Runs the real pipeline in CI: <span class="mono">load_next.py → dbt build → publish</span></span>
     <a href="https://github.com/baybailz/crm-dedupe-etl" target="_blank" rel="noopener">source ↗</a>
     <a href="https://github.com/baybailz/crm-dedupe-etl/actions" target="_blank" rel="noopener">actions ↗</a>
     <span class="spacer"></span>
@@ -424,13 +514,13 @@
 
 <dialog id="tokenDlg">
   <h3>Connect GitHub</h3>
-  <p>The load button dispatches a GitHub Actions workflow, which needs a
-     fine-grained personal access token. It's stored only in this browser
-     (localStorage) and sent only to <span class="mono">api.github.com</span>.</p>
+  <p>Loading dispatches a GitHub Actions workflow, which needs a fine-grained
+     token. Stored only in this browser; sent only to
+     <span class="mono">api.github.com</span>.</p>
   <ol>
     <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → fine-grained tokens</a></li>
     <li>Repository access: <b>Only select repositories → crm-dedupe-etl</b></li>
-    <li>Permissions: <b>Actions — read &amp; write</b> · <b>Contents — read</b></li>
+    <li>Permissions: <b>Actions: read &amp; write</b> · <b>Contents: read</b></li>
   </ol>
   <input id="tokenInput" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
   <div class="row">
@@ -453,24 +543,37 @@ const ICO = {
   dbt:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>',
   crm:'<svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M9 4v16"/></svg>',
   check:'<svg viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7"/></svg>',
-  flag:'<svg viewBox="0 0 24 24"><path d="M6 21V4c4-2.5 8 2.5 12 0v10c-4 2.5-8-2.5-12 0"/></svg>',
   copy:'<svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><rect x="4" y="4" width="12" height="12" rx="2"/></svg>',
   search:'<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>',
+  expand:'<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>',
+  lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>',
+  codegl:'<svg viewBox="0 0 24 24"><path d="m9 8-4 4 4 4M15 8l4 4-4 4"/></svg>',
+  close:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
 };
 const STATUS_META = {
   new:{label:'new',cls:'b-new',ico:ICO.check},
-  duplicate_of_crm:{label:'dup — CRM',cls:'b-dup',ico:ICO.copy},
-  duplicate_cross_file:{label:'dup — other file',cls:'b-dup',ico:ICO.copy},
-  duplicate_within_file:{label:'dup — same file',cls:'b-dup',ico:ICO.copy},
-  needs_review:{label:'needs review',cls:'b-review',ico:ICO.flag},
+  duplicate_of_crm:{label:'dup · CRM',cls:'b-dup',ico:ICO.copy},
+  duplicate_cross_file:{label:'dup · other file',cls:'b-dup',ico:ICO.copy},
+  duplicate_within_file:{label:'dup · same file',cls:'b-dup',ico:ICO.copy},
 };
 
-let D = {summary:null, company:[], log:[], dupes:[], next:{name:null,rows:[]}, logs:null};
+let D = {summary:null, company:[], log:[], dupes:[], next:{name:null,rows:[]}, models:null};
+let modelPick = 'models/transform/trn_scored_pairs.sql';
+let archZoom = false;
+let ideFull = false;
+let ideView = 'code';
+function toggleIdeFull(){
+  ideFull=!ideFull;
+  document.documentElement.classList.toggle('noscroll',ideFull);
+  const ide=document.querySelector('.ide');
+  if(ide){ide.classList.toggle('full',ideFull);swapIdePane();}
+  else renderPresent();
+}
 let prevSummary=null, prevCompanyIds=null;
 let mode='present', slideIdx=0, slideDir=1;
-let currentTab='company', logFilter='all', dupeFilter='all', searchCompany='', searchLog='';
+let currentTab='incoming', dupeFilter='all', searchCompany='';
 let running=false, runPhase='idle', runLink=null, runMsg='';
-let revealLogs=false;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -493,6 +596,19 @@ $('themeBtn').onclick=()=>{
 applyTheme();
 
 /* ================= toasts ================= */
+let denyCount=0,denyTimer=null;
+function denyFlash(btn){
+  denyCount=Math.min(denyCount+1,5);
+  btn.style.setProperty('--deny',(0.07+denyCount*0.05).toFixed(2));
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){
+    btn.classList.add('deny');setTimeout(()=>btn.classList.remove('deny'),260);
+  }else{
+    btn.classList.remove('deny');void btn.offsetWidth;btn.classList.add('deny');
+    setTimeout(()=>btn.classList.remove('deny'),120);
+  }
+  clearTimeout(denyTimer);
+  denyTimer=setTimeout(()=>{denyCount=0;},2500);
+}
 function toast(msg,ms=3800){
   const el=document.createElement('div');
   el.className='toast';el.innerHTML=msg;
@@ -516,23 +632,28 @@ async function loadAll(viaApi=false){
   const [summary,company,log,dupes,next]=await Promise.all(
     ['summary.json','company.json','record_status.json','potential_duplicates.json','next_file.json']
       .map(n=>fetchJson(n,viaApi)));
+  const models=await fetchJson('models.json',viaApi).catch(()=>null);
   const logs=await fetchJson('logs.json',viaApi).catch(()=>null);
-  D={summary,company,log,dupes,next,logs};
+  
+  const modelData=await fetchJson('model_data.json',viaApi).catch(()=>null);
+  const pres=await fetchJson('presentation.json',viaApi).catch(()=>null);
+  D={summary,company,log,dupes,next,models,logs,modelData,pres};
   render();
 }
 
 /* ================= tiny syntax highlighters ================= */
 function highlight(code, lang){
   const rules={
-    py:[[/#.*$/m,'c-com'],[/'[^'\n]*'|"[^"\n]*"/,'c-str'],
+    py:[[/"""[\s\S]*?"""/,'c-com'],[/#.*$/m,'c-com'],[/'[^'\n]*'|"[^"\n]*"/,'c-str'],
         [/\b(def|return|if|elif|else|for|in|not|with|open|import|from|as|None|True|False|and|or|start|print)\b/,'c-kw'],
         [/\b\d+\b/,'c-num']],
-    sql:[[/--.*$/m,'c-com'],[/\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/,'c-jinja'],[/'[^'\n]*'/,'c-str'],
+    sql:[[/--.*$/m,'c-com'],[/\{#[\s\S]*?#\}/,'c-com'],[/\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/,'c-jinja'],[/'[^'\n]*'/,'c-str'],
         [/\b(select|from|join|left|right|inner|on|where|case|when|then|else|end|as|with|and|or|not|null|is|union|all|coalesce|row_number|over|partition|by|order|group|using|cast|varchar|true|false|min|max|desc)\b/i,'c-kw'],
         [/\b\d+(\.\d+)?\b/,'c-num']],
     yml:[[/#.*$/m,'c-com'],[/"[^"\n]*"|'[^'\n]*'/,'c-str'],
         [/^(\s*(?:- )?[\w.-]+):/m,'c-key'],[/\b(true|false)\b/,'c-num']],
   }[lang];
+  if(!rules)return esc(code);
   const master=new RegExp(rules.map(r=>`(?:${r[0].source})`).join('|'),'gmi');
   let out='',last=0,m;
   while((m=master.exec(code))!==null){
@@ -542,142 +663,152 @@ function highlight(code, lang){
     for(const [re,c] of rules){
       if(new RegExp('^(?:'+re.source+')$','mi').test(m[0])){cls=c;break;}
     }
-    out+=`<span class="${cls}">${esc(m[0])}</span>`;
+    // keep newlines outside spans so the line splitter cannot break a tag
+    out+=m[0].split('\n').map(seg=>seg?`<span class="${cls}">${esc(seg)}</span>`:'').join('\n');
     last=m.index+m[0].length;
   }
   out+=esc(code.slice(last));
   return out;
 }
-function codePanel(title,sub,code,lang,maxH){
+function fileTree(files,cur){
+  // nested {dirs..., __files:[...]} from the flat path list
+  const root={};
+  files.forEach(f=>{
+    const parts=f.path.split('/');
+    let n=root;
+    parts.forEach((p,i)=>{
+      if(i===parts.length-1)(n.__files??=[]).push(f);
+      else n=(n[p]??={});
+    });
+  });
+  const DIR_ORDER={macros:0,models:1,tests:2,seeds:3,scripts:4,'.github':5,workflows:0,staging:0,transform:1,conformed:2};
+  const render=(node,depth)=>{
+    let h='';
+    Object.keys(node).filter(k=>k!=='__files')
+      .sort((a,b)=>(DIR_ORDER[a]??9)-(DIR_ORDER[b]??9)||a.localeCompare(b))
+      .forEach(k=>{
+        h+=`<div class="fxrow dir" style="padding-left:${8+depth*14}px">▾ ${esc(k)}</div>`;
+        h+=render(node[k],depth+1);
+      });
+    (node.__files||[]).forEach(f=>{
+      const nm=f.path.split('/').pop();
+      const ext=nm.endsWith('.yml')?'yml':nm.endsWith('.py')?'py':nm.endsWith('.csv')?'csv':'sql';
+      h+=`<button class="fxrow${f.path===cur?' on':''}" data-open="${esc(f.path)}"
+            style="padding-left:${8+depth*14}px"><span class="fico ${ext}"></span>${esc(nm)}</button>`;
+    });
+    return h;
+  };
+  return render(root,0);
+}
+function numbered(code,lang){
+  return highlight(code,lang).split('\n').map((line,i)=>
+    `<span class="cline"><span class="cno">${i+1}</span><span class="ctxt">${line||' '}</span></span>`
+  ).join('');
+}
+function codePanel(title,sub,code,lang,maxH,barExtra=''){
   return `<div class="code"><div class="codebar">
-      <span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span>
-      <span class="codetitle">${esc(title)}<span class="dim">${esc(sub)}</span></span></div>
-    <div class="codebody"${maxH?` style="max-height:${maxH}px"`:''}>${highlight(code,lang)}</div></div>`;
+      <span class="codetitle">${esc(title)}<span class="dim">${esc(sub)}</span></span>${barExtra}</div>
+    <div class="codebody"${maxH?` style="max-height:${maxH}px"`:''}>${numbered(code,lang)}</div></div>`;
+}
+const ideMaxBtn=()=>`<button class="idemax" data-idemax
+  title="${ideFull?'Exit (Esc)':'Expand'}">${ideFull?ICO.close:ICO.expand}</button>`;
+const ideViewBtn=()=>`<button class="idemax" data-ideview
+  title="${ideView==='code'?'Run · view the data':'Back to the code'}">${ideView==='code'?ICO.play:ICO.codegl}</button>`;
+const fmtCell=v=>v==null?'∅':typeof v==='number'&&!Number.isInteger(v)?v.toFixed(3):String(v);
+function codeSlideCtx(){
+  const files=D.models.files.filter(f=>!f.path.startsWith('.github'));
+  const cur=files.find(f=>f.path===modelPick)||files[0];
+  const rel=cur.path.split('/').pop().replace(/\.[a-z]+$/,'');
+  return {files,cur,rel,rows:D.modelData?.[rel]};
+}
+function idePaneHtml({cur,rel,rows}){
+  const lang=p=>p.endsWith('.yml')?'yml':p.endsWith('.py')?'py':p.endsWith('.csv')?'csv':'sql';
+  const btns=`<span class="barbtns">${Array.isArray(rows)?ideViewBtn():''}${ideMaxBtn()}</span>`;
+  if(ideView==='data'&&Array.isArray(rows)){
+    return `<div class="code"><div class="codebar">
+          <span class="codetitle">${esc(rel)}<span class="dim">${rows.length} rows · last run</span></span>
+        ${btns}</div>
+      <div class="codebody" style="padding:15px 18px">${dataBody(rows)}</div></div>`;
+  }
+  return codePanel(cur.path,`${cur.sql.split('\n').length} lines`,
+    cur.sql,lang(cur.path),0,btns);
+}
+function wireIdeButtons(){
+  document.querySelectorAll('[data-idemax]').forEach(b=>b.onclick=toggleIdeFull);
+  document.querySelectorAll('[data-ideview]').forEach(b=>b.onclick=()=>{
+    ideView=ideView==='code'?'data':'code';swapIdePane();
+  });
+}
+function swapIdePane(){
+  const pane=document.querySelector('.ide .code');
+  if(!pane)return renderPresent();
+  pane.outerHTML=idePaneHtml(codeSlideCtx());
+  wireIdeButtons();
+}
+function dataBody(rows){
+  if(!rows.length)return '<div class="dempty">0 rows at the current demo state</div>';
+  const cols=Object.keys(rows[0]);
+  return `<table class="dtable"><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(fmtCell(r[c]))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 }
 
 /* ================= slide content ================= */
-const PY_SNIPPET=`def pending(loaded):
-    all_files = sorted(p.stem for p in INCOMING.glob("*.csv"))
-    return [f for f in all_files if f not in loaded]
-
-def rebuild_seed(loaded):
-    rows_out = []
-    for name in loaded:              # each loaded file, in order
-        with open(INCOMING / f"{name}.csv") as fh:
-            for i, row in enumerate(csv.DictReader(fh), 1):
-                rows_out.append(     # lineage: file + line no.
-                    [name, i] +
-                    [row.get(c, "") for c in VENDOR_COLS])
-    write_csv(SEED_FILE, SEED_COLS, rows_out)
-    return len(rows_out)
-
-loaded = read_state()        # state/loaded_files.json
-queue  = pending(loaded)
-if queue:                    # ONE file per run
-    print(f"picked up: {queue[0]}.csv")
-    loaded = loaded + [queue[0]]
-write_state(loaded)
-rebuild_seed(loaded)         # -> seeds/vendor_records.csv`;
-
-const SQL_SNIPPET=`-- 1 · normalized match keys (macros: strip suffixes, USPS abbrevs, aliases)
-{{ normalize_company_name('company_name') }}  as name_norm,
-{{ normalize_address('address_1') }}          as address_norm,
-
--- 2 · blocking: only compare pairs that share geography
-from list_recs a
-join crm b
-  on a.zip5 = b.zip5
-  or (a.city_norm = b.city_norm and a.state_norm = b.state_norm)
-
--- 3 · fuzzy + exact signals per candidate pair
-{{ similarity('a.name_match', 'b.name_match') }}     as name_sim,
-{{ similarity('a.address_norm', 'b.address_norm') }} as addr_sim,
-(a.street_num = b.street_num)                        as street_match,
-(a.phone10 = b.phone10)                              as phone_match,
-
--- 4 · tiered classification
-case
-  when name_sim >= 0.85 and geo_match
-       and street_match and addr_sim >= 0.70   then 'duplicate'
-  when (phone_match or domain_match)
-       and name_sim >= 0.80 and street_match   then 'duplicate'
-  when name_sim >= 0.92 and geo_match          then 'review'
-end as match_class`;
-
-const YML_TESTS=`models:
-  - name: record_status
-    columns:
-      - name: record_key
-        tests: [unique, not_null]        # one verdict per vendor record
-      - name: status
-        tests:
-          - accepted_values:
-              values: [new, duplicate_of_crm, duplicate_within_file,
-                       duplicate_cross_file, needs_review]
-
-  - name: companies_to_import
-    columns:
-      - name: company_id
-        tests: [unique, not_null]        # no key collisions on insert
-
-  - name: company_post_import
-    columns:
-      - name: company_id
-        tests: [unique, not_null]        # the CRM stays duplicate-free`;
-
-const YML_WF=`on:
-  workflow_dispatch:
-    inputs:
-      action: {type: choice, options: [load_next, reset]}
-
-permissions: {contents: write}     # scoped: commit results back
-concurrency: {group: pipeline}     # one run at a time
-
-steps:
-  - uses: actions/checkout@v4
-  - uses: actions/setup-python@v5
-  - run: pip install dbt-core dbt-duckdb duckdb
-  - run: python scripts/load_next.py --action \${{ inputs.action }}
-  - run: dbt build --no-use-colors        # models + tests, fail = no publish
-  - run: python scripts/export_json.py    # marts -> docs/data/*.json + logs
-  - run: git commit -m "pipeline" && git push`;
-
+const ARCH_FULL=[0,58,1000,252], ARCH_PIPE=[250,64,500,192];
 function svgArch(){
-  return `<svg viewBox="0 58 1000 252" role="img" aria-label="Architecture loop">
+  const vb=(archZoom?ARCH_PIPE:ARCH_FULL).join(' ');
+  return `<svg class="arch-svg${archZoom?' zoomed':''}" viewBox="${vb}" role="img" aria-label="Architecture loop">
     <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0 10 5 0 10z" fill="var(--ink3)"/></marker></defs>
-    <rect class="hnode" x="28" y="118" width="180" height="94" rx="14"/>
-    <text class="htext" x="118" y="152" text-anchor="middle">This page</text>
-    <text class="hsub" x="118" y="172" text-anchor="middle">GitHub Pages · static</text>
-    <text class="hsub" x="118" y="188" text-anchor="middle">token stays in browser</text>
-    <rect class="hgroup" x="282" y="76" width="490" height="168" rx="16"/>
-    <text class="hlabel" x="298" y="100">GitHub Actions · ubuntu runner · one click = one real pipeline run</text>
-    <rect class="hnode" x="302" y="122" width="128" height="92" rx="12"/>
-    <text class="htext" x="366" y="150" text-anchor="middle">load_next.py</text>
-    <text class="hsub" x="366" y="170" text-anchor="middle">picks up 1 file</text>
-    <text class="hsub" x="366" y="186" text-anchor="middle">stamps lineage</text>
-    <rect class="hnode hot" x="450" y="122" width="156" height="92" rx="12"/>
-    <text class="htext" x="528" y="150" text-anchor="middle">dbt build</text>
-    <text class="hsub" x="528" y="170" text-anchor="middle">normalize · block</text>
-    <text class="hsub" x="528" y="186" text-anchor="middle">score · classify</text>
-    <text class="hsub" x="528" y="202" text-anchor="middle">+ data tests</text>
-    <rect class="hnode" x="628" y="122" width="128" height="92" rx="12"/>
-    <text class="htext" x="692" y="150" text-anchor="middle">export_json.py</text>
-    <text class="hsub" x="692" y="170" text-anchor="middle">marts → JSON</text>
-    <text class="hsub" x="692" y="186" text-anchor="middle">+ run logs</text>
-    <rect class="hnode" x="812" y="118" width="160" height="94" rx="14"/>
-    <text class="htext" x="892" y="150" text-anchor="middle">Repository</text>
-    <text class="hsub" x="892" y="170" text-anchor="middle">docs/data/*.json</text>
-    <text class="hsub" x="892" y="186" text-anchor="middle">state · vendor seed</text>
-    <path class="hline flowing" d="M208 165 H294"/>
-    <text class="hlabel" x="251" y="153" text-anchor="middle">dispatch</text>
-    <path class="hline" d="M430 168 H444"/>
-    <path class="hline" d="M606 168 H622"/>
-    <path class="hline flowing" d="M756 165 H806"/>
-    <text class="hlabel" x="783" y="153" text-anchor="middle">commit</text>
-    <path class="hline flowing" d="M892 212 C892 292, 118 292, 118 218"/>
-    <text class="hlabel" x="505" y="284" text-anchor="middle">page polls the run, then pulls fresh tables + logs</text>
+    <g class="outer">
+      <rect class="hnode" x="28" y="118" width="170" height="94" rx="14"/>
+      <text class="htext" x="113" y="152" text-anchor="middle">This page</text>
+      <text class="hsub" x="113" y="172" text-anchor="middle">GitHub Pages · static</text>
+      <text class="hsub" x="113" y="188" text-anchor="middle">token stays in browser</text>
+      <rect class="hnode" x="802" y="118" width="170" height="94" rx="14"/>
+      <text class="htext" x="887" y="150" text-anchor="middle">Repository</text>
+      <text class="hsub" x="887" y="170" text-anchor="middle">docs/data/*.json</text>
+      <text class="hsub" x="887" y="186" text-anchor="middle">state · vendor seed</text>
+      <path class="hline flowing" d="M198 165 H270"/>
+      <text class="hlabel" x="237" y="153" text-anchor="middle">dispatch</text>
+      <path class="hline flowing" d="M724 165 H796"/>
+      <text class="hlabel" x="763" y="153" text-anchor="middle">commit</text>
+      <path class="hline flowing" d="M887 216 L887 248 Q887 258 877 258 L123 258 Q113 258 113 248 L113 222"/>
+      <text class="hlabel" x="500" y="282" text-anchor="middle">poll the run · pull fresh tables + logs</text>
+    </g>
+    <rect class="hgroup" x="260" y="76" width="480" height="152" rx="16"/>
+    <text class="hlabel" x="276" y="100">Data pipeline via GitHub Actions</text>
+    <rect class="hnode" x="276" y="127" width="132" height="76" rx="12"/>
+    <text class="htext" x="342" y="157" text-anchor="middle">Stage data</text>
+    <text class="hsub" x="342" y="178" text-anchor="middle">stage_for_dbt.py</text>
+    <rect class="hnode hot" x="425" y="127" width="150" height="76" rx="12"/>
+    <text class="htext" x="500" y="153" text-anchor="middle">Transform data</text>
+    <text class="hsub" x="500" y="173" text-anchor="middle">dbt build --select</text>
+    <text class="hsub" x="500" y="189" text-anchor="middle">tag:master_data</text>
+    <rect class="hnode" x="592" y="127" width="132" height="76" rx="12"/>
+    <text class="htext" x="658" y="157" text-anchor="middle">Export data</text>
+    <text class="hsub" x="658" y="178" text-anchor="middle">export_json.py</text>
+    <path class="hline" d="M408 165 H417"/>
+    <path class="hline" d="M575 165 H584"/>
   </svg>`;
+}
+function archZoomToggle(){
+  const svg=document.querySelector('.arch-svg'); if(!svg)return;
+  const from=archZoom?ARCH_PIPE:ARCH_FULL, to=archZoom?ARCH_FULL:ARCH_PIPE;
+  archZoom=!archZoom;
+  svg.classList.toggle('zoomed',archZoom);
+  const btn=$('archZoomBtn');
+  if(btn)btn.innerHTML=archZoom?'&#8854; full picture':'&#8853; zoom to pipeline';
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){
+    svg.setAttribute('viewBox',to.join(' '));return;
+  }
+  const t0=performance.now(),ms=460;
+  const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+  const step=now=>{
+    const p=Math.min(1,(now-t0)/ms),e=ease(p);
+    svg.setAttribute('viewBox',from.map((f,i)=>f+(to[i]-f)*e).join(' '));
+    if(p<1)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 function svgDag(){
   const node=(cls,x,y,label,tag)=>`
@@ -686,177 +817,146 @@ function svgDag(){
     <text class="dagtext" x="${x+14}" y="${y+32}">${label}</text>`;
   const edge=(x1,y1,x2,y2,main)=>`<path class="dagline${main?' main':''}"
     d="M${x1} ${y1} C ${x1+55} ${y1}, ${x2-55} ${y2}, ${x2} ${y2}"/>`;
-  return `<svg viewBox="0 0 1010 400" role="img" aria-label="dbt lineage graph">
+  return `<svg viewBox="0 0 1060 375" role="img" aria-label="dbt lineage graph">
     <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
       <path d="M0 0 10 5 0 10z" fill="var(--border2)"/></marker></defs>
-    ${node('n-seed',10,40,'crm_company','SEED')}
-    ${node('n-seed',10,150,'vendor_records','SEED')}
-    ${node('n-seed',10,260,'company_name_aliases','SEED')}
-    ${node('n-stg',272,95,'stg_crm_company','STG')}
-    ${node('n-stg',272,205,'stg_list_company','STG')}
-    ${node('n-int',534,150,'int_scored_pairs','INT')}
-    ${node('n-mart',796,28,'potential_duplicates','MART')}
-    ${node('n-mart',796,124,'record_status','MART')}
-    ${node('n-mart',796,220,'companies_to_import','MART')}
-    ${node('n-mart',796,316,'company_post_import','MART')}
-    ${edge(206,63,272,118)}
-    ${edge(206,173,272,228)}
-    ${edge(206,283,272,131)}
-    ${edge(206,283,272,241)}
-    ${edge(468,118,534,173,1)}
-    ${edge(468,228,534,173,1)}
-    ${edge(730,173,796,51,1)}
-    ${edge(730,173,796,147,1)}
-    ${edge(730,147,796,243)}
-    ${edge(730,243,796,339)}
-    <text class="dagtag" x="748" y="205" transform="rotate(0)">via status='new'</text>
+    ${node('n-seed',20,30,'crm_company','SEED')}
+    ${node('n-seed',20,150,'vendor_records','SEED')}
+    ${node('n-seed',20,270,'company_name_aliases','SEED')}
+    ${node('n-stg',300,60,'stg_company','STG')}
+    ${node('n-stg',300,210,'stg_purchased_company','STG')}
+    ${node('n-int',560,60,'trn_scored_pairs','TRN')}
+    ${node('n-dim',850,20,'dim_company_duplicates','DIM')}
+    ${node('n-dim',850,115,'dim_record_status','DIM')}
+    ${node('n-dim',850,210,'dim_company_purchased','DIM')}
+    ${node('n-dim',850,305,'dim_company','DIM')}
+    ${edge(216,53,294,83)}
+    ${edge(216,173,294,233)}
+    <path class="dagline" d="M216 293 C 262 293, 254 96, 294 83"/>
+    ${edge(216,293,294,233)}
+    <path class="dagline" d="M496 83 H554"/>
+    <path class="dagline" d="M496 233 C 532 233, 532 92, 554 83"/>
+    ${edge(756,83,844,43)}
+    ${edge(756,83,844,138)}
+    <path class="dagline" d="M496 233 C 660 188, 780 148, 844 138"/>
+    <path class="dagline" d="M496 83 C 640 214, 770 233, 844 233"/>
+    <path class="dagline" d="M496 83 C 660 332, 770 328, 844 328"/>
+    <path class="dagline" d="M948 161 V204"/>
+    <path class="dagline" d="M948 256 V299"/>
   </svg>`;
 }
 
 const SLIDES=[
   {id:'title',kicker:'BI · ETL SCENARIO',render(){
     return `<div class="titleslide">
-      <div class="kicker">BI · ETL scenario walkthrough</div>
-      <h2>Importing purchased company lists<br>without duplicating the CRM</h2>
+      <div class="kicker">Scenario walkthrough</div>
+      <h2>Import two vendor lists.<br>Create zero duplicates.</h2>
       <div class="stackchips">
         <span class="schip hot">python</span><span class="schip hot">dbt</span>
         <span class="schip">duckdb / snowflake</span><span class="schip">github actions</span>
         <span class="schip">jaro-winkler</span>
       </div>
-      <p class="lead">Two vendor CSV files, one CRM company table. Find the duplicates
-        (across the files <i>and</i> against the CRM), import only what's new, and give
-        every record a disposition — then prove it end-to-end with a live run.</p>
-      <div class="byline">Bailey Thompson · solution deck + working demo</div>
+      <p class="lead">Sales bought two lists of companies. Find the duplicates,
+        import what's new, and record what happened to every row.</p>
+      <div class="byline">Bailey Thompson</div>
     </div>`;}},
-  {id:'problem',kicker:'THE PROBLEM',render(){
-    const v=(a,b,cls,lab)=>`<tr><td class="mono">${esc(a)}</td><td class="faded">${esc(b)}</td>
-      <td style="text-align:right"><span class="badge ${cls}">${lab}</span></td></tr>`;
-    return `<div class="kicker">The problem</div>
-      <h2>“7-Eleven” arrives five different ways</h2>
-      <p class="lead">The CRM has <b>7-Eleven · 218 Peachtree Street NW · Atlanta 30303</b>.
-        The purchased lists contain all of these. Exact-match joins catch none of them correctly:</p>
-      <div class="verdicts"><table>
-        ${v('7-Eleven · 218 Peachtree Street Northwest','spelled-out directional','b-dup','duplicate')}
-        ${v('711 · 218 Peachtree St NW','brand alias','b-dup','duplicate')}
-        ${v('7-Eleven, Inc. · 218 Peachtree St','legal suffix + partial address','b-dup','duplicate')}
-        ${v('7-11 · 218 Peachtree NW (no zip)','alias + missing field','b-dup','duplicate')}
-        ${v('7-Eleven · 1234 Peachtree St SE','same name, different street','b-review','needs review')}
-      </table></div>
-      <p class="lead" style="margin-top:18px">The last one matters most: a pipeline that quietly guesses
-        would either <b>merge a real second location away</b> or <b>import a duplicate</b>.
-        Mine refuses to guess — it routes that row to a human.</p>`;}},
-  {id:'arch',kicker:'ARCHITECTURE',render(){
-    return `<div class="kicker">Architecture</div>
-      <h2>A static page driving a real pipeline</h2>
-      <p class="lead">The demo console is plain GitHub Pages. The Load button dispatches a GitHub Actions
-        workflow that runs the actual ELT — Python ingest, dbt transform + tests — and commits the
-        result tables back as JSON. Nothing is mocked.</p>
-      <div class="diagram">${svgArch()}</div>`;}},
-  {id:'python',kicker:'STEP 1 · PYTHON',render(){
-    return `<div class="kicker">Step 1 · Extract &amp; load</div>
-      <h2>Python picks up one file per run</h2>
-      <div class="cols">
-        ${codePanel('scripts/load_next.py','abridged',PY_SNIPPET,'py',470)}
-        <ul class="pointlist">
-          <li><span class="pt">1</span><span><b>One file per invocation.</b> The queue is
-            <span class="mono">incoming/*.csv</span>; a JSON state file records what's loaded, in order.</span></li>
-          <li><span class="pt">2</span><span><b>Lineage from the first byte.</b> Every record is stamped
-            <span class="mono">source_file + row_num</span> — any CRM row traces back to its exact file and line.</span></li>
-          <li><span class="pt">3</span><span><b>Deterministic &amp; replayable.</b> The state file fully
-            describes the world; re-running rebuilds the same seed. Against Snowflake this same step is
-            <span class="mono">PUT + COPY INTO</span> with <span class="mono">metadata$file_row_number</span>.</span></li>
-        </ul>
+  {id:'assumptions',kicker:'STRATEGY & ASSUMPTIONS',render(){
+    return `<h2>Strategy &amp; assumptions</h2>
+      <ul class="pointlist">
+        <li><span class="pt">1</span><span><b>Master data is the source of truth.</b>
+          <span class="mono">crm_company</span> wins every conflict. An import adds rows;
+          it never edits or deletes one.</span></li>
+        <li><span class="pt">2</span><span><b>Purchased data is low-trust.</b> Expect
+          abbreviations, legal suffixes, missing zips, and duplicates inside the file itself.</span></li>
+        <li><span class="pt">3</span><span><b>Identity is name + address.</b> Not name alone:
+          same name at a different street number is a second location, not a duplicate.</span></li>
+        <li><span class="pt">4</span><span><b>Medallion layering.</b> raw seeds → staging
+          (normalize) → transform (match) → conformed (publish). One job per layer, tested
+          at each step.</span></li>
+        <li><span class="pt">5</span><span><b>Every row gets an outcome.</b> Nothing is
+          dropped silently, and <span class="mono">dim_company</span> is incremental on
+          <span class="mono">company_id</span>, so a repeated run upserts instead of
+          duplicating.</span></li>
+        <li><span class="pt">6</span><span><b>Built to production standards.</b> Contracts sit
+          beside the models they govern, materializations and tags are declared per model,
+          and a steward maintains the alias list in a spreadsheet. Adding a blocking key is
+          one line; adding a source is one staging model.</span></li>
+      </ul>`;}},
+  {id:'arch',kicker:'THE ARCHITECTURE',render(){
+    return `<h2>The architecture</h2>
+      <p class="lead">Load dispatches a GitHub Actions workflow: Python ingest, dbt build,
+        results committed back as JSON. A real pipeline, driven from a web page.</p>
+      <div class="diagram" style="position:relative">
+        ${svgArch()}
+        <button class="zoombtn" id="archZoomBtn">${archZoom?'&#8854; full picture':'&#8853; zoom to pipeline'}</button>
       </div>`;}},
-  {id:'lineage',kicker:'STEP 2 · DBT',render(){
-    return `<div class="kicker">Step 2 · Transform</div>
-      <h2>dbt lineage — raw seeds to final marts</h2>
-      <p class="lead">Version-controlled SQL, tested at every layer. <span class="mono">dbt build</span> runs
-        this graph in dependency order on DuckDB locally — the same models compile to Snowflake unchanged.</p>
-      <div class="diagram">${svgDag()}</div>
+  {id:'lineage',kicker:'DBT LINEAGE',render(){
+    return `<h2>dbt lineage</h2>
+      <p class="lead"><span class="mono">dbt build</span> runs this graph in dependency order,
+        tests included. Staging and transform build as views, conformed as tables, declared
+        per model with <span class="mono">config()</span>. Same models, DuckDB or Snowflake.</p>
+      <div class="diagram" style="margin:38px 0 26px">${svgDag()}</div>
       <div class="legend">
-        <span><span class="sw seed"></span>seeds / raw</span>
-        <span><span class="sw stg"></span>staging — normalize match keys</span>
-        <span><span class="sw int"></span>intermediate — block · score · classify</span>
-        <span><span class="sw mart"></span>marts — the three deliverables + final table</span>
+        <span><span class="sw seed"></span>raw</span>
+        <span><span class="sw stg"></span>staging</span>
+        <span><span class="sw int"></span>transform</span>
+        <span><span class="sw dim"></span>conformed</span>
       </div>`;}},
-  {id:'models',kicker:'STEP 2 · DBT MODELS',render(){
-    return `<div class="kicker">Step 2 · The matching brain</div>
-      <h2>Normalize → block → score → classify</h2>
-      <div class="cols">
-        ${codePanel('models/intermediate/int_scored_pairs.sql','abridged',SQL_SNIPPET,'sql',470)}
-        <ul class="pointlist">
-          <li><span class="pt">1</span><span><b>Normalize</b> in macros: strip legal suffixes &amp; punctuation,
-            alias <span class="mono">711 → 7 eleven</span> (a seed CSV, not code), USPS-abbreviate addresses,
-            phone→digits, site→domain.</span></li>
-          <li><span class="pt">2</span><span><b>Block</b> on shared zip or city+state — near-linear
-            instead of N×M, so it scales to real list sizes.</span></li>
-          <li><span class="pt">3</span><span><b>Score</b> with Jaro-Winkler — built into both Snowflake
-            and DuckDB, no UDFs — plus hard signals: phone, domain, street number.</span></li>
-          <li><span class="pt">4</span><span><b>Classify</b> with tiers. The street-number guard is what
-            sends “same name, different address” to <b>review</b> instead of auto-merging.</span></li>
-        </ul>
+  {id:'code',kicker:'THE CODE',render(){
+    if(!D.models||!D.models.files?.length){
+      return `<h2>The code</h2>
+        <p class="lead">Not published yet. It lands with the next pipeline run
+          (<span class="mono">docs/data/models.json</span>).</p>`;
+    }
+    const {files,cur}=codeSlideCtx();
+    return `<h2>The code</h2>
+      <p class="lead">${files.length} files,
+        ~${Math.round(files.reduce((a,f)=>a+f.sql.split('\n').length,0)/10)*10} lines.</p>
+      <div class="ide tall${ideFull?' full':''}">
+        <aside class="fx">
+          <div class="fxhead">EXPLORER</div>
+          <div class="fxrepo">crm-dedupe-etl</div>
+          <div class="fxbody">${fileTree(files,cur.path)}</div>
+        </aside>
+        ${idePaneHtml(codeSlideCtx())}
       </div>`;}},
-  {id:'tests',kicker:'STEP 3 · TESTS',render(){
-    return `<div class="kicker">Step 3 · Quality gates</div>
-      <h2>Tests run in the same breath as the models</h2>
-      <div class="cols">
-        ${codePanel('models/schema.yml','data tests',YML_TESTS,'yml',470)}
-        <ul class="pointlist">
-          <li><span class="pt">✓</span><span><b>One verdict per record.</b> <span class="mono">record_key</span>
-            is unique and never null — no vendor row is dropped or double-judged.</span></li>
-          <li><span class="pt">✓</span><span><b>Closed status vocabulary.</b> Only the five agreed dispositions
-            can ever appear — a typo&#39;d status fails the build, not the sales report.</span></li>
-          <li><span class="pt">✓</span><span><b>The CRM stays clean.</b> <span class="mono">company_id</span>
-            uniqueness on the post-import table is the contract: re-runs cannot double-insert
-            (belt) and the loader MERGEs on <span class="mono">source_record_key</span> (braces).</span></li>
-          <li><span class="pt">✓</span><span><b>Failing tests block publish.</b> In CI, a red
-            <span class="mono">dbt build</span> stops the workflow before anything is committed.</span></li>
-        </ul>
-      </div>`;}},
-  {id:'table',kicker:'STEP 4 · RESULT',render(){
+  {id:'table',kicker:'THE RESULT',render(){
     const s=D.summary;
-    if(!s) return `<div class="kicker">Step 4 · Result</div><h2>The final company table</h2>
-      <p class="lead">Live data hasn't loaded yet — check connectivity.</p>`;
+    if(!s) return `<h2>The result</h2>
+      <p class="lead">Live data hasn't loaded yet. Check connectivity.</p>`;
     const rows=D.company.map(c=>`
-      <tr${c.record_source!=='crm'?' class="rowimp"':''}>
+      <tr${c.source!=='crm_company'?' class="rowimp"':''}>
         <td class="num mono faded">${esc(c.company_id)}</td>
         <td><b>${esc(c.company_name)}</b></td>
         <td>${esc(c.address)}<span class="sub2">${esc(c.city)}, ${esc(c.state)} ${esc(c.zip??'')}</span></td>
-        <td>${c.record_source==='crm'
-              ?'<span class="badge b-crm">original</span>'
-              :`<span class="badge b-new">${ICO.check}imported</span><span class="sub2 mono">${esc(c.record_source)}</span>`}</td>
+        <td><span class="mono faded">${esc(c.source)}</span>
+          ${c.source_record_key?`<span class="sub2 mono">${esc(c.source_record_key)}</span>`:''}</td>
       </tr>`).join('');
-    const sc=D.summary.status_counts||{};
-    const chip=(k)=>sc[k]?`<span class="badge ${STATUS_META[k].cls}" style="font-size:12px">${STATUS_META[k].ico}${STATUS_META[k].label} · ${sc[k]}</span>`:'';
-    return `<div class="kicker">Step 4 · Result</div>
-      <h2>The final company table — live, not a mockup</h2>
-      <p class="lead">${fmtN(s.companies_total)} companies · ${s.files_loaded.length} of
-        ${s.files_loaded.length+s.files_pending.length} vendor files processed ·
-        ${fmtN(s.duplicates_blocked)} duplicates blocked · ${fmtN(s.needs_review)} routed to review.
-        This is <span class="mono">select * from company_post_import</span> as of the last pipeline run.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${['new','duplicate_of_crm','duplicate_cross_file','duplicate_within_file','needs_review'].map(chip).join('')}</div>
-      <div class="verdicts" style="max-height:380px;overflow:auto"><table>
+    return `<h2>The result</h2>
+      <p class="lead"><span class="mono">select * from dim_company</span></p>
+      <div class="verdicts" style="max-height:440px;overflow:auto;margin-top:8px"><table>
         <thead><tr><th>ID</th><th>Company</th><th>Address</th><th>Source</th></tr></thead>
         <tbody>${rows}</tbody></table></div>`;}},
-  {id:'ci',kicker:'STEP 5 · RUNTIME',render(){
-    return `<div class="kicker">Step 5 · Orchestration</div>
-      <h2>GitHub Actions is the runtime</h2>
-      <div class="cols">
-        ${codePanel('.github/workflows/pipeline.yml','abridged',YML_WF,'yml',470)}
-        <ul class="pointlist">
-          <li><span class="pt">1</span><span><b>Dispatchable + parameterized.</b> The console (or the CLI)
-            triggers it with <span class="mono">load_next</span> or <span class="mono">reset</span>.</span></li>
-          <li><span class="pt">2</span><span><b>Serialized.</b> A concurrency group means two eager clicks
-            can't race the state file.</span></li>
-          <li><span class="pt">3</span><span><b>Fail-closed.</b> If any dbt test fails, the run dies before
-            the commit step — bad vendor data never reaches the published tables.</span></li>
-          <li><span class="pt">4</span><span><b>Same commands as local.</b> CI runs exactly what I run on my
-            laptop; in production this maps to Airflow/dagster + Snowflake with zero model changes.</span></li>
-        </ul>
-      </div>
-      <div class="deckbar" style="margin-top:26px">
-        <button class="navbtn primary" onclick="setMode('console')">Run it live → open the console</button>
-      </div>`;}},
+  {id:'avoided',kicker:'WHAT WE AVOIDED',render(){
+    const pres=D.pres;
+    if(!pres) return `<h2>What we avoided</h2>
+      <p class="lead">Snapshot not published yet
+        (<span class="mono">docs/data/presentation.json</span>).</p>`;
+    const dups=pres.rows.filter(r=>r.in_cluster).length;
+    const rows=pres.rows.map(r=>`
+      <tr${r.in_cluster?' class="rowdup"':''}>
+        <td><b>${esc(r.company_name)}</b></td>
+        <td>${esc(r.address)}<span class="sub2">${esc(r.city)}, ${esc(r.state)} ${esc(r.zip??'')}</span></td>
+        <td class="mono faded">${esc(r.phone_number??'—')}</td>
+        <td><span class="mono faded">${esc(r.source)}</span></td>
+      </tr>`).join('');
+    return `<h2>What we avoided</h2>
+      <p class="lead"><span class="mono">select * from stg_company union all
+        select * from stg_purchased_company</span></p>
+      <div class="verdicts" style="max-height:430px;overflow:auto;margin-top:8px"><table>
+        <thead><tr><th>Company</th><th>Address</th><th>Phone</th><th>Source</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      `;}},
 ];
 
 /* ================= presentation shell ================= */
@@ -877,9 +977,27 @@ function renderPresent(){
   $('prevBtn').onclick=()=>gotoSlide(slideIdx-1);
   $('nextBtn').onclick=()=>gotoSlide(slideIdx+1);
   document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>gotoSlide(+b.dataset.goto));
+  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{
+    const path=b.dataset.open, id=SLIDES[slideIdx].id;
+    if(id==='code'){
+      modelPick=path;ideView='code';
+      const ide=document.querySelector('.ide');
+      if(ide){
+        ide.querySelectorAll('.fxrow.on').forEach(r=>r.classList.remove('on'));
+        b.classList.add('on');
+        swapIdePane();
+        return;
+      }
+    }
+    renderPresent();
+  });
+  document.querySelector('.fxrow.on')?.scrollIntoView({block:'nearest',inline:'nearest'});
+  const zb=$('archZoomBtn'); if(zb)zb.onclick=archZoomToggle;
+  wireIdeButtons();
 }
 function gotoSlide(i){
   if(i<0||i>=SLIDES.length)return;
+  if(ideFull)toggleIdeFull();
   slideDir=i>=slideIdx?1:-1;
   slideIdx=i;
   history.replaceState(null,'',`#present/${i+1}`);
@@ -888,6 +1006,7 @@ function gotoSlide(i){
 addEventListener('keydown',e=>{
   if(mode!=='present')return;
   if(e.target.closest('input,textarea')||$('tokenDlg').open)return;
+  if(ideFull){if(e.key==='Escape')toggleIdeFull();return;}
   if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();gotoSlide(slideIdx+1);}
   if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();gotoSlide(slideIdx-1);}
   if(e.key==='Home'){gotoSlide(0);}
@@ -907,33 +1026,51 @@ function stageState(key){
   return'';
 }
 function pipe(){
-  const s=D.summary;
-  const stages=[
-    {key:'queue',ico:ICO.file,t:'Incoming queue',
-     d:s.next_file?`next: <span class="mono">${esc(s.next_file)}.csv</span> · ${s.files_pending.length} pending`:'queue empty — all files loaded'},
-    {key:'load',ico:ICO.py,t:'Python pickup',d:'<span class="mono">load_next.py</span> stamps file + row lineage'},
-    {key:'dbt',ico:ICO.dbt,t:'dbt build',d:'normalize → block → fuzzy score → classify, then tests'},
-    {key:'crm',ico:ICO.crm,t:'CRM company table',d:`<b>${fmtN(s.companies_total)}</b> companies · ${fmtN(s.duplicates_blocked)} dups blocked`},
+  const s=D.summary, L=D.logs||{};
+  const order=['dispatch','load','dbt','publish','refresh','done'];
+  const state=key=>{
+    if(runPhase==='idle'||runPhase==='fail')return '';
+    const map={load:'load',dbt:'dbt',crm:'publish'};
+    const idx=order.indexOf(runPhase), mine=order.indexOf(map[key]);
+    if(runPhase==='done')return 'done';
+    return mine<idx?'done':mine===idx?'active':'';
+  };
+  const next=s.next_file;
+  const wasReset=L.action==='reset';
+  const waiting='<span class="dim">waiting…</span>';
+  const pick=(key,active,doneNow,resting)=>{
+    const st=state(key);
+    if(!running)return resting;
+    return st==='active'?active:st==='done'?doneNow:waiting;
+  };
+  const cols=[
+    {key:'load',t:'Python',
+     line:pick('load',`loading ${esc(next||'')}.csv…`,`loaded ${esc(next||'')}.csv`,
+       L.loaded_file?`loaded ${esc(L.loaded_file)}.csv`
+       :wasReset?'<span class="dim">reset · queue cleared</span>'
+                :'<span class="dim">no run yet</span>')},
+    {key:'dbt',t:'dbt build',
+     line:pick('dbt','dbt build --select tag:master_data…','models + tests complete',
+       L.passed?`dbt build --select tag:master_data · <span class="ok">PASS=${L.passed}</span>`
+               :'<span class="dim">no run yet</span>')},
+    {key:'crm',t:'Conformed tables',
+     line:pick('crm','publishing…','published',
+       L.loaded_file?`dim_company → added ${L.added} records`
+       :wasReset?`dim_company → ${fmtN(s.companies_total)} records`
+                :'<span class="dim">no run yet</span>')},
   ];
-  let html='';
-  stages.forEach((st,i)=>{
-    const cls=stageState(st.key);
-    html+=`<div class="stage ${cls}">
-      <span class="t">${st.ico}${cls==='active'?'<span class="spin"></span>':''}${esc(st.t)}</span>
-      <span class="d">${st.d}</span></div>`;
-    if(i<stages.length-1){
-      const flowing=cls==='done'||cls==='active';
-      html+=`<div class="conn ${running&&flowing?'flow':''}"></div>`;
-    }
-  });
-  $('pipe').innerHTML=html;
+  $('pipe').innerHTML=cols.map(c=>
+    `<div class="logcol ${state(c.key)}">
+       <span class="lch"><span class="lcs"></span>${esc(c.t)}</span>
+       <div class="lcl">${c.line}</div>
+     </div>`).join('');
   const all=[...s.files_loaded,...s.files_pending];
   $('queue').innerHTML=all.map(f=>{
     const loaded=s.files_loaded.includes(f),isNext=f===s.next_file;
     const loading=running&&isNext&&['dispatch','load','dbt','publish','refresh'].includes(runPhase);
     const cls=loading?'loading':loaded?'loaded':isNext?'next':'';
     const mark=loading?'<span class="spin"></span>':loaded?'✓':isNext?'→':'·';
-    return `<span class="fchip ${cls}">${mark}<span class="mono">${esc(f)}.csv</span></span>`;
+    return `<span class="fchip ${cls}" data-file="${esc(f)}">${mark}<span class="mono">${esc(f)}.csv</span></span>`;
   }).join('');
   cta();
   const rl=$('runline');
@@ -945,46 +1082,27 @@ function pipe(){
   }
 }
 function cta(){
-  const s=D.summary,b=$('ctaBtn'),sub=$('pipeSub');
+  const s=D.summary,b=$('ctaBtn');
   if(!b)return;
   const total=s.files_loaded.length+s.files_pending.length;
   b.classList.remove('attn');b.disabled=false;
   if(running){
     b.innerHTML='<span class="spin"></span>Running…';b.disabled=true;b.onclick=null;
-    sub.innerHTML=esc(runMsg);return;
+    return;
   }
   if(!s.next_file){
     b.innerHTML='Reset demo <span class="arr">↺</span>';b.onclick=confirmReset;
-    sub.innerHTML=`All <b>${total}</b> files loaded · <b>${fmtN(s.companies_total)}</b> companies in the CRM ·
-      <b>${fmtN(s.duplicates_blocked)}</b> duplicates blocked along the way`;return;
+    return;
   }
-  const rows=(D.next.rows||[]).length;
-  sub.innerHTML=`Next up: <b>${esc(s.next_file)}.csv</b>${rows?` (${rows} vendor records)`:''} ·
-    ${s.files_pending.length} of ${total} files still to load`;
   if(!token()){
-    b.innerHTML='Connect GitHub to load <span class="arr">⚙</span>';
-    b.onclick=()=>$('tokenDlg').showModal();b.classList.add('attn');return;
+    b.innerHTML=`${ICO.lock}Run data pipeline<span class="only">owner only</span>`;
+    b.classList.add('locked');
+    b.title='This is the trigger. Only the repository owner can start a run.';
+    b.onclick=()=>denyFlash(b);return;
   }
-  b.innerHTML=`Load ${esc(s.next_file)}.csv <span class="arr">→</span>`;
+  b.innerHTML=`Run data pipeline <span class="arr">→</span>`;
   b.onclick=()=>runPipeline('load_next');
   if(s.files_loaded.length===0)b.classList.add('attn');
-}
-function kpis(){
-  const s=D.summary,p=prevSummary;
-  const delta=(cur,prev,warn=false)=>{
-    if(p==null||prev==null||cur===prev)return'';
-    const d=cur-prev;
-    return `<span class="delta ${warn?'dwarn':''}">${d>0?'+'+fmtN(d):fmtN(d)}</span>`;
-  };
-  const items=[
-    {n:fmtN(s.companies_total),d:delta(s.companies_total,p?.companies_total),l:'companies in CRM',c:'var(--accent)'},
-    {n:`${s.files_loaded.length}<span style="font-size:16px;color:var(--ink3)"> / ${s.files_loaded.length+s.files_pending.length}</span>`,d:'',l:'files loaded',c:'var(--accent-2)'},
-    {n:fmtN(s.records_processed),d:delta(s.records_processed,p?.records_processed),l:'records processed',c:'var(--accent-deep)'},
-    {n:fmtN(s.duplicates_blocked),d:delta(s.duplicates_blocked,p?.duplicates_blocked),l:'duplicates blocked',c:'var(--dup)'},
-    {n:fmtN(s.needs_review),d:delta(s.needs_review,p?.needs_review,true),l:'flagged for review',c:'var(--warn)'},
-  ];
-  $('kpis').innerHTML=items.map(i=>
-    `<div class="kpi" style="--kc:${i.c}"><div class="n">${i.n}${i.d}</div><div class="l">${i.l}</div></div>`).join('');
 }
 function badge(status){
   const m=STATUS_META[status]||{label:status,cls:'b-crm',ico:''};
@@ -1022,13 +1140,12 @@ function panelCompany(){
       <td>${esc(c.address)}<span class="sub2">${esc(c.city)}, ${esc(c.state)} ${esc(c.zip??'')}</span></td>
       <td class="mono faded">${esc(c.phone_number??'—')}</td>
       <td class="faded">${esc(c.website??'—')}</td>
-      <td>${c.record_source==='crm'
-            ?'<span class="badge b-crm">original</span>'
-            :`<span class="badge b-new">${ICO.check}imported</span><span class="sub2 mono">${esc(c.record_source)}</span>`}</td>
+      <td><span class="mono faded">${esc(c.source)}</span>
+          ${c.source_record_key?`<span class="sub2 mono">${esc(c.source_record_key)}</span>`:''}</td>
     </tr>`).join('');
   return `<div class="card">
-    <div class="cardhead"><h2>company</h2>
-      <span class="hint mono">select * from company_post_import</span>
+    <div class="cardhead"><h2 class="mono">dim_company</h2>
+      <span class="hint">the company dimension after every load so far</span>
       <span class="spacer"></span>${searchBox('searchCompanyIn',searchCompany,'search companies…')}</div>
     ${rows?tableHTML(['ID','Company','Address','Phone','Website','Source'],rows)
           :'<div class="empty">No companies match that search.</div>'}
@@ -1039,7 +1156,7 @@ function panelIncoming(){
     return `<div class="card"><div class="empty">
       <div class="big">✦</div>
       <b>All vendor files are loaded.</b><br>
-      <span>${fmtN(D.summary.companies_total)} companies in the CRM, every duplicate blocked along the way.</span><br>
+      <span>${fmtN(D.summary.companies_total)} companies in the CRM.</span><br>
       <button class="btn btn-primary" id="resetBtn2">Reset the demo ↺</button>
     </div></div>`;
   }
@@ -1054,60 +1171,20 @@ function panelIncoming(){
     </tr>`).join('');
   return `<div class="card">
     <div class="cardhead"><h2><span class="mono">incoming/${esc(D.next.name)}.csv</span></h2>
-      <span class="hint">raw vendor data, exactly as purchased — not yet in the CRM</span></div>
+      <span class="hint">raw vendor data, not yet in the CRM</span></div>
     ${tableHTML(['#','Company','Address','Phone','Website'],rows)}
     <div class="loadbar">
-      <button class="btn btn-primary" id="loadBtn" ${running?'disabled':''}>${
+      <button class="btn btn-primary${token()?'':' locked'}" id="loadBtn" ${running?'disabled':''}
+        ${token()?'':'title="This is the trigger. Only the repository owner can start a run."'}>${
         running?'Pipeline running…'
-        :token()?`Load ${esc(D.next.name)}.csv into the CRM<span class="arr">→</span>`
-        :'Connect GitHub to load ⚙'}</button>
-      <span class="loadnote">Dispatches the <b>pipeline</b> workflow on GitHub Actions:
-        <span class="mono">load_next.py</span> picks up this file,
-        <span class="mono">dbt build</span> dedupes it against everything already in the CRM
-        (and runs the test suite), then these tables refresh live.</span>
+        :token()?`Run data pipeline <span class="arr">→</span>`
+        :`${ICO.lock}Run data pipeline<span class="only">owner only</span>`}</button>
     </div>
-  </div>`;
-}
-function panelLog(){
-  const q=searchLog.trim().toLowerCase();
-  const counts={all:D.log.length,new:0,dup:0,review:0};
-  D.log.forEach(r=>{
-    if(r.status==='new')counts.new++;
-    else if(r.status==='needs_review')counts.review++;
-    else counts.dup++;
-  });
-  const chip=(key,label)=>
-    `<button class="chip" data-lf="${key}" aria-pressed="${logFilter===key}">${label}<span class="cnt">${counts[key]}</span></button>`;
-  const match=r=>
-    (logFilter==='all'
-      ||(logFilter==='new'&&r.status==='new')
-      ||(logFilter==='review'&&r.status==='needs_review')
-      ||(logFilter==='dup'&&r.status.startsWith('duplicate')))
-    &&(!q||`${r.record_key} ${r.company_name} ${r.address_1} ${r.matched_name??''}`.toLowerCase().includes(q));
-  const rows=[...D.log].reverse().filter(match).map(r=>`
-    <tr>
-      <td class="mono faded">${esc(r.record_key)}</td>
-      <td><b>${esc(r.company_name)}</b><span class="sub2">${esc(r.address_1??'')}</span></td>
-      <td>${badge(r.status)}</td>
-      <td>${r.matched_name
-            ?`${esc(r.matched_name)}<span class="sub2 mono">${esc(r.matched_id??'')}</span>`
-            :'<span class="faded">—</span>'}</td>
-    </tr>`).join('');
-  return `<div class="card">
-    <div class="cardhead"><h2>record_status</h2>
-      <span class="hint">every vendor record processed, and what the pipeline decided</span>
-      <span class="spacer"></span>${searchBox('searchLogIn',searchLog,'search records…')}</div>
-    ${D.log.length?`<div class="chips">${chip('all','All')}${chip('new','New')}${chip('dup','Duplicates')}${chip('review','Review')}</div>`:''}
-    ${D.log.length
-        ?(rows?tableHTML(['Record','Vendor record','Status','Matched to'],rows)
-              :'<div class="empty">Nothing matches that filter.</div>')
-        :'<div class="empty"><div class="big">⟡</div>No files loaded yet — head to <b>Incoming file</b> and press the button.</div>'}
   </div>`;
 }
 function panelDupes(){
   const counts={all:D.dupes.length,
-    duplicate:D.dupes.filter(d=>d.match_class==='duplicate').length,
-    review:D.dupes.filter(d=>d.match_class==='review').length};
+    duplicate:D.dupes.filter(d=>d.match_class==='duplicate').length};
   const chip=(key,label)=>
     `<button class="chip" data-df="${key}" aria-pressed="${dupeFilter===key}">${label}<span class="cnt">${counts[key]}</span></button>`;
   const rows=D.dupes
@@ -1120,107 +1197,48 @@ function panelDupes(){
       <td class="faded">${esc(r.duplicate_of)}</td>
       <td>${meter(r.name_similarity)}</td>
       <td>${meter(r.address_similarity)}</td>
-      <td>${r.match_class==='duplicate'
-            ?`<span class="badge b-dup">${ICO.copy}duplicate</span>`
-            :`<span class="badge b-review">${ICO.flag}review</span>`}</td>
+      <td><span class="badge b-dup">${ICO.copy}duplicate</span></td>
     </tr>`).join('');
   return `<div class="card">
-    <div class="cardhead"><h2>potential_duplicates</h2>
-      <span class="hint">pair-level report for the sales team — Jaro-Winkler similarity per pair</span></div>
-    ${D.dupes.length?`<div class="chips">${chip('all','All')}${chip('duplicate','Duplicate')}${chip('review','Needs review')}</div>`:''}
+    <div class="cardhead"><h2 class="mono">dim_company_duplicates</h2>
+      <span class="hint">pair-level report with Jaro-Winkler scores</span></div>
+    ${D.dupes.length?`<div class="chips">${chip('all','All')}${chip('duplicate','Duplicate')}</div>`:''}
     ${D.dupes.length
         ?tableHTML(['Record','Vendor record','Matched against','Where','Name sim','Addr sim','Class'],rows)
-        :'<div class="empty"><div class="big">✓</div>No duplicate pairs yet — load a file and watch this fill up.</div>'}
+        :'<div class="empty"><div class="big">✓</div>No duplicate pairs yet.</div>'}
   </div>`;
 }
-function colorPy(line){
-  const m=line.match(/^\[(\w+)\]\s?(.*)$/s);
-  if(!m)return `<span class="tl">${esc(line)}</span>`;
-  const colors={scan:'lg-cyan',state:'lg-vio',pickup:'lg-pink',seed:'lg-good',reset:'lg-warn',done:'lg-good'};
-  return `<span class="lg-dim">[</span><span class="${colors[m[1]]||'lg-cyan'}">${esc(m[1])}</span><span class="lg-dim">]</span> ${esc(m[2])}`;
-}
-function colorDbt(line){
-  let html=esc(line);
-  html=html.replace(/^(\d\d:\d\d:\d\d)/,'<span class="lg-dim">$1</span>');
-  html=html.replace(/\b(PASS|OK created|OK loaded|SUCCESS)\b/g,'<span class="lg-good">$1</span>');
-  html=html.replace(/\b(ERROR|FAIL(?:ED)?)\b/g,'<span class="lg-bad">$1</span>');
-  html=html.replace(/\b(WARN(?:ING)?)\b/g,'<span class="lg-warn">$1</span>');
-  html=html.replace(/\b(PASS=\d+)\b/g,'<span class="lg-good">$1</span>');
-  html=html.replace(/\b(ERROR=[1-9]\d*)\b/g,'<span class="lg-bad">$1</span>');
-  html=html.replace(/\b(Done\.)/,'<span class="lg-strong">$1</span>');
-  html=html.replace(/(sql (?:view|table) model [\w.]+|seed file [\w.]+|test [\w.]+)/,'<span class="lg-strong">$1</span>');
-  return html;
-}
-function terminal(title,sub,text,colorFn,reveal){
-  const lines=(text||'').split('\n');
-  const body=lines.map((l,i)=>{
-    const d=reveal?`style="--d:${Math.min(i*26,2400)}ms"`:'style="--d:0ms"';
-    return `<span class="tl" ${d}>${colorFn(l)||'&nbsp;'}</span>`;
-  }).join('');
-  return `<div class="term">
-    <div class="termbar"><span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span>
-      <span class="termtitle">${esc(title)}<span class="dim">${esc(sub)}</span></span></div>
-    <div class="termbody">${body}</div></div>`;
-}
-function panelLogs(){
-  if(running){
-    return `<div class="card"><div class="empty">
-      <div class="big"><span class="spin" style="width:22px;height:22px;border-width:3px"></span></div>
-      <b>${esc(runMsg)}</b><br>
-      <span>Terminal output lands here the moment the CI run finishes.</span>
-      ${runLink?`<br><br><a href="${runLink}" target="_blank" rel="noopener" style="font-weight:650">watch it live on GitHub ↗</a>`:''}
-    </div></div>`;
-  }
-  const L=D.logs;
-  if(!L||(!L.python&&!L.dbt)){
-    return `<div class="card"><div class="empty"><div class="big">▚</div>
-      <b>No captured runs yet.</b><br>
-      <span>Press <b>Load</b> — the Python and dbt output from that exact CI run shows up here.</span>
-    </div></div>`;
-  }
-  const when=new Date(L.generated_at).toLocaleString([],{dateStyle:'medium',timeStyle:'short'});
-  const what=L.action==='reset'?'reset':`load ${L.loaded_file??''}.csv`;
-  const r=revealLogs;revealLogs=false;
-  return `<div class="card">
-    <div class="cardhead"><h2>run output</h2>
-      <span class="hint">captured from the last GitHub Actions run — <b>${esc(what)}</b> · ${esc(when)}</span></div>
-    ${terminal('scripts/load_next.py','python 3.12 · ubuntu runner',L.python,colorPy,r)}
-    ${terminal('dbt build','dbt-duckdb · models + data tests',L.dbt,colorDbt,r)}
-  </div>`;
-}
+
 function renderPanel(){
   const panel=$('panel');if(!panel)return;
-  panel.innerHTML={company:panelCompany,incoming:panelIncoming,log:panelLog,dupes:panelDupes,logs:panelLogs}[currentTab]();
+  panel.innerHTML={company:panelCompany,incoming:panelIncoming,dupes:panelDupes}[currentTab]();
   const lb=$('loadBtn');
-  if(lb)lb.onclick=()=>token()?runPipeline('load_next'):$('tokenDlg').showModal();
+  if(lb)lb.onclick=()=>token()?runPipeline('load_next'):denyFlash(lb);
   const rb2=$('resetBtn2');
   if(rb2)rb2.onclick=confirmReset;
-  document.querySelectorAll('[data-lf]').forEach(b=>b.onclick=()=>{logFilter=b.dataset.lf;renderPanel();});
   document.querySelectorAll('[data-df]').forEach(b=>b.onclick=()=>{dupeFilter=b.dataset.df;renderPanel();});
   hookSearch('searchCompanyIn',v=>searchCompany=v);
-  hookSearch('searchLogIn',v=>searchLog=v);
 }
 function renderConsole(){
   $('main').innerHTML=`
     <section class="pipe-card">
       <div class="pipehead">
-        <div class="pipeh-l">
-          <div class="pipetitle">Pipeline</div>
-          <div class="pipesub" id="pipeSub">—</div>
-        </div>
+        <div class="pipeh-l"><div class="pipetitle">Data pipeline</div></div>
         <button class="btn btn-primary cta" id="ctaBtn">Load</button>
       </div>
-      <div class="pipe" id="pipe"></div>
-      <div class="queue" id="queue"></div>
+      <div class="piperow">
+        <aside class="srcbox">
+          <div class="srclabel">Source</div>
+          <div class="queue" id="queue"></div>
+        </aside>
+        <div class="pipe" id="pipe"></div>
+      </div>
       <div class="runline" id="runline" style="display:none"></div>
     </section>
-    <section class="kpis" id="kpis"></section>
     <div class="tabs" role="tablist" id="tabs">
-      <button class="tab" role="tab" data-tab="company">CRM table<span class="cnt" id="cnt-company"></span></button>
-      <button class="tab" role="tab" data-tab="incoming">Incoming file<span class="cnt" id="cnt-incoming"></span></button>
-      <button class="tab" role="tab" data-tab="log">Record log<span class="cnt" id="cnt-log"></span></button>
-      <button class="tab" role="tab" data-tab="dupes">Duplicate report<span class="cnt" id="cnt-dupes"></span></button>
-      <button class="tab" role="tab" data-tab="logs">Run logs<span class="cnt" id="cnt-logs"></span></button>
+      <button class="tab" role="tab" data-tab="incoming"><span class="mono">incoming/*.csv</span><span class="cnt" id="cnt-incoming"></span></button>
+      <button class="tab" role="tab" data-tab="company"><span class="mono">dim_company</span><span class="cnt" id="cnt-company"></span></button>
+      <button class="tab" role="tab" data-tab="dupes"><span class="mono">dim_company_duplicates</span><span class="cnt" id="cnt-dupes"></span></button>
     </div>
     <div id="panel"></div>`;
   $('tabs').addEventListener('click',e=>{
@@ -1232,12 +1250,10 @@ function renderConsole(){
   renderConsoleBody();
 }
 function renderConsoleBody(){
-  pipe();kpis();
+  pipe();
   $('cnt-company').textContent=D.company.length;
   $('cnt-incoming').textContent=D.next.name?D.next.rows.length:0;
-  $('cnt-log').textContent=D.log.length;
   $('cnt-dupes').textContent=D.dupes.length;
-  $('cnt-logs').textContent=(D.logs&&(D.logs.python||D.logs.dbt))?'●':'';
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===currentTab));
   renderPanel();
 }
@@ -1245,14 +1261,13 @@ function renderConsoleBody(){
 /* ================= mode routing ================= */
 function setMode(m,push=true){
   mode=m;
+  if(ideFull&&m==='console'){ideFull=false;document.documentElement.classList.remove('noscroll');}
   if(push)history.replaceState(null,'',m==='present'?`#present/${slideIdx+1}`:`#console/${currentTab}`);
   document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===mode));
-  $('freshPill').style.display=mode==='console'?'flex':'none';
   render();
 }
 function render(){
   if(!D.summary){return;}
-  $('freshText').textContent='data as of '+new Date(D.summary.generated_at).toLocaleString([],{dateStyle:'medium',timeStyle:'short'});
   if(mode==='present')renderPresent();else renderConsole();
 }
 $('modes').addEventListener('click',e=>{
@@ -1267,8 +1282,8 @@ function parseHash(){
   }else if(h.startsWith('console')){
     mode='console';
     const t=h.split('/')[1];
-    if(['company','incoming','log','dupes','logs'].includes(t))currentTab=t;
-  }else if(['company','incoming','log','dupes','logs','how'].includes(h)){
+    if(['company','incoming','dupes'].includes(t))currentTab=t;
+  }else if(['company','incoming','dupes','how'].includes(h)){
     mode='console';currentTab=h==='how'?'company':h;
   }
 }
@@ -1282,25 +1297,44 @@ async function gh(path,opts={}){
   if(!r.ok&&r.status!==204)throw new Error(`GitHub API ${r.status} on ${path.split('?')[0]}`);
   return r.status===204?null:r.json();
 }
+function flyFileIntoPipeline(name){
+  const pill=document.querySelector(`.fchip[data-file="${name}"]`);
+  const target=document.querySelector('.pipe .logcol');
+  if(!pill||!target||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const from=pill.getBoundingClientRect(), to=target.getBoundingClientRect();
+  const clone=pill.cloneNode(true);
+  clone.classList.add('flying');
+  Object.assign(clone.style,{left:from.left+'px',top:from.top+'px',width:from.width+'px'});
+  document.body.appendChild(clone);
+  pill.style.opacity='.2';
+  requestAnimationFrame(()=>{
+    clone.style.transition='transform .9s cubic-bezier(.45,0,.25,1),opacity .9s ease-in';
+    clone.style.transform=`translate(${to.left+18-from.left}px,${to.top+40-from.top}px) scale(.9)`;
+    clone.style.opacity='0';
+  });
+  setTimeout(()=>{clone.remove();pill.style.opacity='';},960);
+}
 function setPhase(phase,msg){runPhase=phase;runMsg=msg;if(mode==='console'&&$('pipe'))pipe();}
 function phaseFromSteps(steps){
   const active=steps.find(s=>s.status==='in_progress')||
                [...steps].reverse().find(s=>s.status==='completed');
   if(!active)return['load','Runner starting…'];
   const n=active.name.toLowerCase();
-  if(n.includes('dbt'))return['dbt','Running dbt build — models + data tests…'];
+  if(n.includes('dbt'))return['dbt','Running dbt build: models + data tests…'];
   if(n.includes('export')||n.includes('commit'))return['publish','Publishing fresh tables…'];
-  if(n.includes('load'))return['load',`Python picking up ${D.summary.next_file??'the next'}.csv…`];
+  if(n.includes('load')||n.includes('stage'))return['load',`Python picking up ${D.summary.next_file??'the next'}.csv…`];
   return['load',`CI: ${active.name}…`];
 }
 async function runPipeline(action){
-  if(!token()){$('tokenDlg').showModal();return;}
+  if(!token()){toast('Only the repository owner can start a run.');return;}
   if(running)return;
   running=true;
   prevSummary={...D.summary};
   prevCompanyIds=new Set(D.company.map(c=>c.company_id));
   runLink=null;
+  const flying=action!=='reset'?D.summary.next_file:null;
   setPhase('dispatch',action==='reset'?'Resetting the demo…':'Dispatching the pipeline workflow…');
+  if(flying)flyFileIntoPipeline(flying);
   if(mode==='console')renderPanel();
   try{
     const t0=new Date(Date.now()-15000).toISOString();
@@ -1326,22 +1360,21 @@ async function runPipeline(action){
         setPhase(ph,msg);
       }catch{}
     }
-    if(run.conclusion!=='success')throw new Error(`CI run ${run.conclusion} — check the Actions log`);
-    setPhase('refresh','Pipeline green — pulling fresh tables…');
+    if(run.conclusion!=='success')throw new Error(`CI run ${run.conclusion}. Check the Actions log`);
+    setPhase('refresh','Tests passed. Pulling fresh tables…');
     await sleep(1200);
     await loadAll(true);
     running=false;
     setPhase('done',action==='reset'
-      ?'Demo reset — the CRM is back to its original 5 companies.'
+      ?'Demo reset. Back to the original 5 companies.'
       :'Done. dbt tests passed and the CRM refreshed.');
-    if(mode==='console'){currentTab=action==='reset'?'incoming':'logs';revealLogs=action!=='reset';}
+    if(mode==='console'){currentTab=action==='reset'?'incoming':'company';}
     render();
     if(action!=='reset'&&prevSummary){
       const s=D.summary,parts=[];
       const add=(n,word)=>{if(n>0)parts.push(`<b>${n}</b> ${word}`);};
       add(s.companies_total-prevSummary.companies_total,'new companies imported');
       add(s.duplicates_blocked-prevSummary.duplicates_blocked,'duplicates blocked');
-      add(s.needs_review-prevSummary.needs_review,'flagged for review');
       toast(parts.length?parts.join(' · '):'Load complete',5200);
     }else if(action==='reset'){toast('Demo reset ↺');}
     setTimeout(()=>{if(!running){runPhase='idle';if(mode==='console'&&$('pipe'))pipe();}},7000);
@@ -1362,7 +1395,7 @@ function confirmReset(){
 $('gearBtn').onclick=()=>{$('tokenInput').value=token();$('tokenDlg').showModal();};
 $('tokenSave').onclick=()=>{
   const v=$('tokenInput').value.trim();
-  if(v){localStorage.setItem('gh_token',v);toast('Token saved — you\'re wired up ⚡');}
+  if(v){localStorage.setItem('gh_token',v);toast('Token saved ⚡');}
   $('tokenDlg').close();render();
 };
 $('tokenClear').onclick=()=>{localStorage.removeItem('gh_token');$('tokenInput').value='';$('tokenDlg').close();render();};

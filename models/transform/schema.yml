@@ -1,0 +1,7 @@
+# Transform contracts. Grain is the candidate pair, not the record:
+# a record with no candidates has no row here.
+version: 2
+
+models:
+  - name: trn_scored_pairs
+    description: Candidate pairs with fuzzy scores and classification.

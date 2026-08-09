@@ -1,0 +1,40 @@
+# Seed properties. Column types are pinned to varchar so sparse fields
+# (an all-empty address_2) don't get type-inferred as integers.
+version: 2
+
+seeds:
+  - name: crm_company
+    description: Master company data, the system of record.
+    config:
+      tags: ['master_data']
+      column_types:
+        zip: varchar(10)
+        phone_number: varchar(20)
+
+  - name: vendor_records
+    description: Purchased vendor rows staged by stage_for_dbt.py.
+    config:
+      tags: ['master_data']
+      column_types:
+        source_file: varchar
+        row_num: integer
+        company_name: varchar
+        address_1: varchar
+        address_2: varchar
+        address_3: varchar
+        city: varchar
+        state: varchar
+        zip: varchar(10)
+        website: varchar
+        primary_phone_number: varchar
+
+  - name: company_name_aliases
+    description: Steward-maintained brand aliases, natural names both sides.
+    config:
+      tags: ['master_data']
+      column_types:
+        alias: varchar
+        canonical_name: varchar
+    columns:
+      - name: alias
+        tests: [unique, not_null]
