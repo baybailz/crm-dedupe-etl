@@ -26,8 +26,8 @@ normalized as (
         {{ normalize_address(
             "trim(coalesce(address_1,'') || ' ' || coalesce(address_2,'') || ' ' || coalesce(address_3,''))"
         ) }}                                         as address_norm,
-        lower(trim(city))                            as city_norm,
-        upper(trim(state))                           as state_norm,
+        nullif(lower(trim(city)), '')                            as city_norm,
+        nullif(upper(trim(state)), '')                           as state_norm,
         left({{ digits_only('zip') }}, 5)            as zip5,
         right({{ digits_only('primary_phone_number') }}, 10) as phone10,
         {{ url_domain('website') }}                  as domain

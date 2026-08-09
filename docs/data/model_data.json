@@ -59,43 +59,23 @@
  "vendor_records": [],
  "company_name_aliases": [
   {
-   "alias": "711",
-   "canonical_name": "7-Eleven"
-  },
-  {
    "alias": "7-11",
    "canonical_name": "7-Eleven"
   },
   {
-   "alias": "The Home Depot",
-   "canonical_name": "Home Depot"
+   "alias": "711",
+   "canonical_name": "7-Eleven"
   },
   {
    "alias": "Delta Airlines",
    "canonical_name": "Delta Air Lines"
+  },
+  {
+   "alias": "The Home Depot",
+   "canonical_name": "Home Depot"
   }
  ],
  "stg_company": [
-  {
-   "company_id": 2,
-   "company_name": "Home Depot",
-   "address": "2455 Paces Ferry Road SE",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30339",
-   "phone_number": "770-433-8211",
-   "website": "www.homedepot.com",
-   "primary_contact": "Mike Jones",
-   "name_norm": "home depot",
-   "address_norm": "2455 paces ferry rd se",
-   "city_norm": "atlanta",
-   "state_norm": "GA",
-   "zip5": "30339",
-   "phone10": "7704338211",
-   "domain": "homedepot.com",
-   "name_match": "home depot",
-   "street_num": "2455"
-  },
   {
    "company_id": 1,
    "company_name": "7-Eleven",
@@ -115,6 +95,26 @@
    "domain": "7-eleven.com",
    "name_match": "7 eleven",
    "street_num": "218"
+  },
+  {
+   "company_id": 2,
+   "company_name": "Home Depot",
+   "address": "2455 Paces Ferry Road SE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30339",
+   "phone_number": "770-433-8211",
+   "website": "www.homedepot.com",
+   "primary_contact": "Mike Jones",
+   "name_norm": "home depot",
+   "address_norm": "2455 paces ferry rd se",
+   "city_norm": "atlanta",
+   "state_norm": "GA",
+   "zip5": "30339",
+   "phone10": "7704338211",
+   "domain": "homedepot.com",
+   "name_match": "home depot",
+   "street_num": "2455"
   },
   {
    "company_id": 3,
@@ -184,19 +184,6 @@
  "dim_company_purchased": [],
  "dim_company": [
   {
-   "company_id": 2,
-   "company_name": "Home Depot",
-   "address": "2455 Paces Ferry Road SE",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30339",
-   "phone_number": "770-433-8211",
-   "website": "www.homedepot.com",
-   "primary_contact": "Mike Jones",
-   "source": "crm_company",
-   "source_record_key": null
-  },
-  {
    "company_id": 1,
    "company_name": "7-Eleven",
    "address": "218 Peachtree Street NW",
@@ -206,6 +193,19 @@
    "phone_number": "(404) 555-0100",
    "website": "www.7-eleven.com",
    "primary_contact": "Jane Smith",
+   "source": "crm_company",
+   "source_record_key": null
+  },
+  {
+   "company_id": 2,
+   "company_name": "Home Depot",
+   "address": "2455 Paces Ferry Road SE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30339",
+   "phone_number": "770-433-8211",
+   "website": "www.homedepot.com",
+   "primary_contact": "Mike Jones",
    "source": "crm_company",
    "source_record_key": null
   },

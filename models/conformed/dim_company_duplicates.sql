@@ -26,4 +26,4 @@ select
     match_class
 from {{ ref('trn_scored_pairs') }}
 where match_class is not null
-order by record_key
+order by record_key, matched_id

@@ -23,8 +23,8 @@ normalized as (
         primary_contact,
         {{ normalize_company_name('company_name') }}       as name_norm,
         {{ normalize_address('address') }}                 as address_norm,
-        lower(trim(city))                                  as city_norm,
-        upper(trim(state))                                 as state_norm,
+        nullif(lower(trim(city)), '')                                  as city_norm,
+        nullif(upper(trim(state)), '')                                 as state_norm,
         left({{ digits_only('zip') }}, 5)                  as zip5,
         right({{ digits_only('phone_number') }}, 10)       as phone10,
         {{ url_domain('website') }}                        as domain

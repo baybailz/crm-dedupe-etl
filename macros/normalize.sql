@@ -54,8 +54,10 @@
 {% macro url_domain(col) -%}
   nullif(
     regexp_replace(
-      regexp_replace(lower(trim(coalesce({{ col }}, ''))), '^https?://', ''),
-      '^www[.]', ''),
+      regexp_replace(
+        regexp_replace(lower(trim(coalesce({{ col }}, ''))), '^https?://', ''),
+        '^www[.]', ''),
+      '[/?#].*$', ''),
     '')
 {%- endmacro %}
 

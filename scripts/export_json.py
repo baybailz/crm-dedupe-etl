@@ -106,7 +106,7 @@ def main() -> None:
         "dim_company_purchased", "dim_company",
     ]
     with duckdb.connect(str(DB), read_only=True) as con2:
-        model_data = {rel: rows_of(con2, f"select * from main.{rel} limit 120")
+        model_data = {rel: rows_of(con2, f"select * from main.{rel} order by all limit 120")
                       for rel in relations}
 
     logs = {

@@ -96,7 +96,7 @@ def main() -> None:
         with duckdb.connect(str(ROOT / "crm_dedupe.duckdb"),
                             read_only=True) as con:
             for rel in relations:
-                cur = con.execute(f"select * from main.{rel} limit 120")
+                cur = con.execute(f"select * from main.{rel} order by all limit 120")
                 cols = [d[0] for d in cur.description]
                 model_data[rel] = [dict(zip(cols, r)) for r in cur.fetchall()]
 

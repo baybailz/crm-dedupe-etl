@@ -35,3 +35,6 @@ seeds:
       column_types:
         alias: varchar
         canonical_name: varchar
+    columns:
+      - name: alias
+        tests: [unique, not_null]

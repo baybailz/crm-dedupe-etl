@@ -20,7 +20,8 @@ with best_match as (
                     when 'cross_file' then 1
                     else 2
                 end,
-                name_sim desc
+                name_sim desc,
+                matched_id
         ) as rn
     from {{ ref('trn_scored_pairs') }}
     where match_class is not null
