@@ -1,3 +1,6 @@
+# One dispatchable workflow = one pipeline run:
+# stage one vendor file -> dbt build (tag:master_data) -> publish JSON.
+# Fails closed: a red build commits nothing.
 name: pipeline
 
 on:
@@ -31,13 +34,16 @@ jobs:
         run: pip install dbt-core dbt-duckdb duckdb
 
       # shell: bash => pipefail, so a failing step still fails through tee
-      - name: Load next vendor file (Python)
+      - name: Stage next vendor file (Python)
         shell: bash
-        run: python scripts/load_next.py --action "${{ inputs.action || 'load_next' }}" 2>&1 | tee /tmp/python.log
+        run: python scripts/stage_for_dbt.py --action "${{ inputs.action || 'load_next' }}" 2>&1 | tee /tmp/python.log
 
       - name: Run dbt (seeds + models + tests)
         shell: bash
-        run: dbt build --no-use-colors 2>&1 | tee /tmp/dbt.log
+        run: |
+          FLAGS=""
+          [ "${{ inputs.action || 'load_next' }}" = "reset" ] && FLAGS="--full-refresh"
+          dbt build --select tag:master_data $FLAGS --no-use-colors 2>&1 | tee /tmp/dbt.log
         env:
           DBT_PROFILES_DIR: .
 
@@ -46,6 +52,9 @@ jobs:
           python scripts/export_json.py
           --action "${{ inputs.action || 'load_next' }}"
           --python-log /tmp/python.log --dbt-log /tmp/dbt.log
+
+      - name: Rebuild the presentation snapshot
+        run: python scripts/build_presentation.py
 
       - name: Commit results
         run: |

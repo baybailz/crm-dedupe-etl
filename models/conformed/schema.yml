@@ -1,0 +1,36 @@
+# Conformed contracts. One verdict per purchased record, four statuses
+# only, unique company_ids so a re-run can never double-insert.
+version: 2
+
+models:
+  - name: dim_company_duplicates
+    description: Suspect pairs for the sales team, with similarity scores.
+
+  - name: dim_record_status
+    description: Disposition of every purchased record.
+    columns:
+      - name: record_key
+        tests: [unique, not_null]
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - new
+                - duplicate_of_crm
+                - duplicate_within_file
+                - duplicate_cross_file
+
+  - name: dim_company_purchased
+    description: Purchased companies imported into the company dimension.
+    columns:
+      - name: company_id
+        tests: [unique, not_null]
+      - name: company_name
+        tests: [not_null]
+
+  - name: dim_company
+    description: The company dimension, master plus imported purchased rows.
+    columns:
+      - name: company_id
+        tests: [unique, not_null]

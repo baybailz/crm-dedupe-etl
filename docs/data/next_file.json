@@ -1,71 +1,82 @@
 {
- "name": "list_c",
+ "name": "list_a",
  "rows": [
   {
-   "company_name": "Blue Heron Analytics LLC",
-   "address_1": "890 Ponce de Leon Avenue NE",
+   "company_name": "7-Eleven",
+   "address_1": "218 Peachtree Street Northwest",
+   "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "website": "7-eleven.com",
+   "primary_phone_number": "404-555-0100"
+  },
+  {
+   "company_name": "711",
+   "address_1": "218 Peachtree St NW",
+   "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "website": "",
+   "primary_phone_number": "4045550100"
+  },
+  {
+   "company_name": "7-Eleven, Inc.",
+   "address_1": "218 Peachtree St",
+   "address_2": "Suite 100",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "website": "www.7-eleven.com",
+   "primary_phone_number": ""
+  },
+  {
+   "company_name": "7-Eleven",
+   "address_1": "1234 Peachtree St SE",
+   "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "website": "",
+   "primary_phone_number": "404-555-0199"
+  },
+  {
+   "company_name": "The Home Depot",
+   "address_1": "2455 Paces Ferry Rd Southeast",
+   "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30339",
+   "website": "homedepot.com",
+   "primary_phone_number": "(770) 433-8211"
+  },
+  {
+   "company_name": "Piedmont Coffee Co",
+   "address_1": "500 10th St NW",
+   "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30318",
+   "website": "piedmontcoffee.com",
+   "primary_phone_number": "404-555-0142"
+  },
+  {
+   "company_name": "Blue Heron Analytics",
+   "address_1": "890 Ponce de Leon Ave NE",
    "address_2": "",
    "address_3": "",
    "city": "Atlanta",
    "state": "GA",
    "zip": "30306",
-   "website": "www.blueheron.io",
+   "website": "blueheron.io",
    "primary_phone_number": "404-555-0177"
-  },
-  {
-   "company_name": "Chick-fil-A Inc",
-   "address_1": "5200 Buffington Rd",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30349",
-   "website": "chick-fil-a.com",
-   "primary_phone_number": "404-765-8000"
-  },
-  {
-   "company_name": "The Coca-Cola Company",
-   "address_1": "1 Coca-Cola Plaza Northwest",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30313",
-   "website": "coca-cola.com",
-   "primary_phone_number": "(404) 676-2121"
-  },
-  {
-   "company_name": "Peachtree Dental Group",
-   "address_1": "3350 Riverwood Pkwy",
-   "address_2": "Suite 1900",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30339",
-   "website": "peachtreedental.com",
-   "primary_phone_number": "770-555-0163"
-  },
-  {
-   "company_name": "Sunrise Bakery",
-   "address_1": "2200 Cheshire Bridge Rd NE",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30324",
-   "website": "",
-   "primary_phone_number": "404-555-0186"
-  },
-  {
-   "company_name": "Midtown Print Works",
-   "address_1": "847 Spring Street NW",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30308",
-   "website": "midtownprintworks.com",
-   "primary_phone_number": "404-555-0134"
   }
  ]
 }

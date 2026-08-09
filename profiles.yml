@@ -1,6 +1,7 @@
-# Two targets:
-#   duckdb    - zero-cost local demo (default). `pip install dbt-duckdb` and go.
-#   snowflake - the real deployment target. Uses env vars so no secrets live in the repo.
+# Two connection targets, same models:
+#   duckdb    - local demo, zero cost
+#   snowflake - production; credentials come from env vars, nothing stored
+# Switch with: dbt build --target snowflake
 crm_dedupe:
   target: duckdb
   outputs:
@@ -10,9 +11,9 @@ crm_dedupe:
       threads: 4
     snowflake:
       type: snowflake
-      account: "{{ env_var('SNOWFLAKE_ACCOUNT', '') }}"
-      user: "{{ env_var('SNOWFLAKE_USER', '') }}"
-      password: "{{ env_var('SNOWFLAKE_PASSWORD', '') }}"
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
       role: "{{ env_var('SNOWFLAKE_ROLE', 'SYSADMIN') }}"
       database: "{{ env_var('SNOWFLAKE_DATABASE', 'CRM_DEMO') }}"
       warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"

@@ -1,0 +1,12 @@
+# Singular test properties. Generic tests (unique, not_null,
+# accepted_values) live with their models; these stand alone.
+version: 2
+
+data_tests:
+  - name: assert_match_keys_present
+    description: >
+      Fails the build if any match key is blank. A blank key scores 0.0
+      against everything, so the record matches nothing and imports as
+      new: a silent duplicate in master data.
+    config:
+      tags: ['master_data']

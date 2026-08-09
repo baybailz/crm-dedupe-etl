@@ -9,7 +9,8 @@
   "phone_number": "(404) 555-0100",
   "website": "www.7-eleven.com",
   "primary_contact": "Jane Smith",
-  "record_source": "crm"
+  "source": "crm_company",
+  "source_record_key": null
  },
  {
   "company_id": 2,
@@ -21,7 +22,8 @@
   "phone_number": "770-433-8211",
   "website": "www.homedepot.com",
   "primary_contact": "Mike Jones",
-  "record_source": "crm"
+  "source": "crm_company",
+  "source_record_key": null
  },
  {
   "company_id": 3,
@@ -33,7 +35,8 @@
   "phone_number": "(404) 715-2600",
   "website": "www.delta.com",
   "primary_contact": "Ana Ruiz",
-  "record_source": "crm"
+  "source": "crm_company",
+  "source_record_key": null
  },
  {
   "company_id": 4,
@@ -45,7 +48,8 @@
   "phone_number": "(404) 765-8000",
   "website": "www.chick-fil-a.com",
   "primary_contact": "Sam Carter",
-  "record_source": "crm"
+  "source": "crm_company",
+  "source_record_key": null
  },
  {
   "company_id": 5,
@@ -57,54 +61,7 @@
   "phone_number": "(404) 676-2121",
   "website": "www.coca-cola.com",
   "primary_contact": "Priya Patel",
-  "record_source": "crm"
- },
- {
-  "company_id": 6,
-  "company_name": "Piedmont Coffee Co",
-  "address": "500 10th St NW",
-  "city": "Atlanta",
-  "state": "GA",
-  "zip": "30318",
-  "phone_number": "404-555-0142",
-  "website": "piedmontcoffee.com",
-  "primary_contact": null,
-  "record_source": "list_a-006"
- },
- {
-  "company_id": 7,
-  "company_name": "Blue Heron Analytics",
-  "address": "890 Ponce de Leon Ave NE",
-  "city": "Atlanta",
-  "state": "GA",
-  "zip": "30306",
-  "phone_number": "404-555-0177",
-  "website": "blueheron.io",
-  "primary_contact": null,
-  "record_source": "list_a-007"
- },
- {
-  "company_id": 8,
-  "company_name": "Sunrise Bakery",
-  "address": "77 Marietta St NW",
-  "city": "Atlanta",
-  "state": "GA",
-  "zip": "30303",
-  "phone_number": "404-555-0161",
-  "website": "sunrisebakeryatl.com",
-  "primary_contact": null,
-  "record_source": "list_b-005"
- },
- {
-  "company_id": 9,
-  "company_name": "Rockdale Paper Supply",
-  "address": "1100 Sigman Road",
-  "city": "Conyers",
-  "state": "GA",
-  "zip": "30012",
-  "phone_number": "770-555-0128",
-  "website": "rockdalepaper.com",
-  "primary_contact": null,
-  "record_source": "list_b-007"
+  "source": "crm_company",
+  "source_record_key": null
  }
 ]

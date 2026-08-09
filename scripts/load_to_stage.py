@@ -1,13 +1,8 @@
-"""Production-style ingest: land the vendor CSVs in Snowflake raw tables.
+"""Land vendor CSVs in Snowflake (production path).
 
-For the local demo this isn't needed (dbt seeds load the CSVs into DuckDB).
-Against Snowflake, this stages each file with PUT and loads it with COPY INTO,
-stamping load metadata (source filename, file row number, load timestamp) so
-every downstream record is traceable back to its file and line.
-
-Usage:
-    export SNOWFLAKE_ACCOUNT=... SNOWFLAKE_USER=... SNOWFLAKE_PASSWORD=...
-    python scripts/load_to_snowflake.py seeds/list_a.csv seeds/list_b.csv
+PUT each file to a stage, then COPY INTO raw.vendor_list with
+metadata$file_row_number as the lineage stamp. Same columns as the
+demo seed, so dbt reads either engine unchanged.
 """
 
 import os
@@ -70,4 +65,4 @@ def main(paths: list[str]) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:] or ["seeds/list_a.csv", "seeds/list_b.csv"])
+    main(sys.argv[1:] or ["incoming/list_a.csv", "incoming/list_b.csv"])

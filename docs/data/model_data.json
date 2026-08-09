@@ -1,0 +1,252 @@
+{
+ "crm_company": [
+  {
+   "company_id": 1,
+   "company_name": "7-Eleven",
+   "address": "218 Peachtree Street NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "phone_number": "(404) 555-0100",
+   "website": "www.7-eleven.com",
+   "primary_contact": "Jane Smith"
+  },
+  {
+   "company_id": 2,
+   "company_name": "Home Depot",
+   "address": "2455 Paces Ferry Road SE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30339",
+   "phone_number": "770-433-8211",
+   "website": "www.homedepot.com",
+   "primary_contact": "Mike Jones"
+  },
+  {
+   "company_id": 3,
+   "company_name": "Delta Air Lines",
+   "address": "1030 Delta Boulevard",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30354",
+   "phone_number": "(404) 715-2600",
+   "website": "www.delta.com",
+   "primary_contact": "Ana Ruiz"
+  },
+  {
+   "company_id": 4,
+   "company_name": "Chick-fil-A",
+   "address": "5200 Buffington Road",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30349",
+   "phone_number": "(404) 765-8000",
+   "website": "www.chick-fil-a.com",
+   "primary_contact": "Sam Carter"
+  },
+  {
+   "company_id": 5,
+   "company_name": "Coca-Cola",
+   "address": "1 Coca-Cola Plaza NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30313",
+   "phone_number": "(404) 676-2121",
+   "website": "www.coca-cola.com",
+   "primary_contact": "Priya Patel"
+  }
+ ],
+ "vendor_records": [],
+ "company_name_aliases": [
+  {
+   "alias": "711",
+   "canonical_name": "7-Eleven"
+  },
+  {
+   "alias": "7-11",
+   "canonical_name": "7-Eleven"
+  },
+  {
+   "alias": "The Home Depot",
+   "canonical_name": "Home Depot"
+  },
+  {
+   "alias": "Delta Airlines",
+   "canonical_name": "Delta Air Lines"
+  }
+ ],
+ "stg_company": [
+  {
+   "company_id": 2,
+   "company_name": "Home Depot",
+   "address": "2455 Paces Ferry Road SE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30339",
+   "phone_number": "770-433-8211",
+   "website": "www.homedepot.com",
+   "primary_contact": "Mike Jones",
+   "name_norm": "home depot",
+   "address_norm": "2455 paces ferry rd se",
+   "city_norm": "atlanta",
+   "state_norm": "GA",
+   "zip5": "30339",
+   "phone10": "7704338211",
+   "domain": "homedepot.com",
+   "name_match": "home depot",
+   "street_num": "2455"
+  },
+  {
+   "company_id": 1,
+   "company_name": "7-Eleven",
+   "address": "218 Peachtree Street NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "phone_number": "(404) 555-0100",
+   "website": "www.7-eleven.com",
+   "primary_contact": "Jane Smith",
+   "name_norm": "7 eleven",
+   "address_norm": "218 peachtree st nw",
+   "city_norm": "atlanta",
+   "state_norm": "GA",
+   "zip5": "30303",
+   "phone10": "4045550100",
+   "domain": "7-eleven.com",
+   "name_match": "7 eleven",
+   "street_num": "218"
+  },
+  {
+   "company_id": 3,
+   "company_name": "Delta Air Lines",
+   "address": "1030 Delta Boulevard",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30354",
+   "phone_number": "(404) 715-2600",
+   "website": "www.delta.com",
+   "primary_contact": "Ana Ruiz",
+   "name_norm": "delta air lines",
+   "address_norm": "1030 delta blvd",
+   "city_norm": "atlanta",
+   "state_norm": "GA",
+   "zip5": "30354",
+   "phone10": "4047152600",
+   "domain": "delta.com",
+   "name_match": "delta air lines",
+   "street_num": "1030"
+  },
+  {
+   "company_id": 4,
+   "company_name": "Chick-fil-A",
+   "address": "5200 Buffington Road",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30349",
+   "phone_number": "(404) 765-8000",
+   "website": "www.chick-fil-a.com",
+   "primary_contact": "Sam Carter",
+   "name_norm": "chick fil a",
+   "address_norm": "5200 buffington rd",
+   "city_norm": "atlanta",
+   "state_norm": "GA",
+   "zip5": "30349",
+   "phone10": "4047658000",
+   "domain": "chick-fil-a.com",
+   "name_match": "chick fil a",
+   "street_num": "5200"
+  },
+  {
+   "company_id": 5,
+   "company_name": "Coca-Cola",
+   "address": "1 Coca-Cola Plaza NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30313",
+   "phone_number": "(404) 676-2121",
+   "website": "www.coca-cola.com",
+   "primary_contact": "Priya Patel",
+   "name_norm": "coca cola",
+   "address_norm": "1 coca cola plaza nw",
+   "city_norm": "atlanta",
+   "state_norm": "GA",
+   "zip5": "30313",
+   "phone10": "4046762121",
+   "domain": "coca-cola.com",
+   "name_match": "coca cola",
+   "street_num": "1"
+  }
+ ],
+ "stg_purchased_company": [],
+ "trn_scored_pairs": [],
+ "dim_company_duplicates": [],
+ "dim_record_status": [],
+ "dim_company_purchased": [],
+ "dim_company": [
+  {
+   "company_id": 2,
+   "company_name": "Home Depot",
+   "address": "2455 Paces Ferry Road SE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30339",
+   "phone_number": "770-433-8211",
+   "website": "www.homedepot.com",
+   "primary_contact": "Mike Jones",
+   "source": "crm_company",
+   "source_record_key": null
+  },
+  {
+   "company_id": 1,
+   "company_name": "7-Eleven",
+   "address": "218 Peachtree Street NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "phone_number": "(404) 555-0100",
+   "website": "www.7-eleven.com",
+   "primary_contact": "Jane Smith",
+   "source": "crm_company",
+   "source_record_key": null
+  },
+  {
+   "company_id": 3,
+   "company_name": "Delta Air Lines",
+   "address": "1030 Delta Boulevard",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30354",
+   "phone_number": "(404) 715-2600",
+   "website": "www.delta.com",
+   "primary_contact": "Ana Ruiz",
+   "source": "crm_company",
+   "source_record_key": null
+  },
+  {
+   "company_id": 4,
+   "company_name": "Chick-fil-A",
+   "address": "5200 Buffington Road",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30349",
+   "phone_number": "(404) 765-8000",
+   "website": "www.chick-fil-a.com",
+   "primary_contact": "Sam Carter",
+   "source": "crm_company",
+   "source_record_key": null
+  },
+  {
+   "company_id": 5,
+   "company_name": "Coca-Cola",
+   "address": "1 Coca-Cola Plaza NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30313",
+   "phone_number": "(404) 676-2121",
+   "website": "www.coca-cola.com",
+   "primary_contact": "Priya Patel",
+   "source": "crm_company",
+   "source_record_key": null
+  }
+ ]
+}

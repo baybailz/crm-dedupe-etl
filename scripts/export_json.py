@@ -51,14 +51,15 @@ def main() -> None:
     con = duckdb.connect(str(DB), read_only=True)
 
     company = rows_of(con, """
-        select * from main.company_post_import order by company_id
+        select * from main.dim_company order by company_id
     """)
     record_status = rows_of(con, """
-        select * from main.record_status order by record_key
+        select * from main.dim_record_status order by record_key
     """)
     dupes = rows_of(con, """
-        select * from main.potential_duplicates order by record_key
+        select * from main.dim_company_duplicates order by record_key
     """)
+
     con.close()
 
     loaded = json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else []
@@ -78,21 +79,42 @@ def main() -> None:
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "companies_total": len(company),
-        "companies_imported": sum(1 for c in company if c["record_source"] != "crm"),
+        "companies_imported": sum(1 for c in company
+                                if c["source"] != "crm_company"),
         "records_processed": len(record_status),
         "duplicates_blocked": sum(
             v for k, v in status_counts.items() if k.startswith("duplicate")),
-        "needs_review": status_counts.get("needs_review", 0),
         "status_counts": status_counts,
         "files_loaded": loaded,
         "files_pending": queue,
         "next_file": next_file,
     }
 
+    last_file = loaded[-1] if (args.action == "load_next" and loaded) else None
+    added = sum(1 for r in record_status
+                if r["status"] == "new" and r["source_file"] == last_file) if last_file else 0
+    passed = 0
+    dbt_text = read_log(args.dbt_log)
+    for token in dbt_text.split():
+        if token.startswith("PASS="):
+            passed = int(token.split("=")[1])
+
+    relations = [
+        "crm_company", "vendor_records", "company_name_aliases",
+        "stg_company", "stg_purchased_company", "trn_scored_pairs",
+        "dim_company_duplicates", "dim_record_status",
+        "dim_company_purchased", "dim_company",
+    ]
+    with duckdb.connect(str(DB), read_only=True) as con2:
+        model_data = {rel: rows_of(con2, f"select * from main.{rel} limit 120")
+                      for rel in relations}
+
     logs = {
         "generated_at": summary["generated_at"],
         "action": args.action,
-        "loaded_file": loaded[-1] if (args.action == "load_next" and loaded) else None,
+        "loaded_file": last_file,
+        "added": added,
+        "passed": passed,
         "python": read_log(args.python_log),
         "dbt": read_log(args.dbt_log),
     }
@@ -100,15 +122,28 @@ def main() -> None:
     # The dbt project source, for the presentation's model browser —
     # published from the repo itself so the deck can never drift from the code.
     model_files = [
+        "scripts/stage_for_dbt.py",
+        "scripts/load_to_stage.py",
+        ".github/workflows/pipeline.yml",
+        "dbt_project.yml",
+        "seeds/schema.yml",
+        "profiles.yml",
+        "seeds/crm_company.csv",
+        "seeds/vendor_records.csv",
+        "seeds/company_name_aliases.csv",
         "macros/normalize.sql",
-        "models/staging/stg_crm_company.sql",
-        "models/staging/stg_list_company.sql",
-        "models/intermediate/int_scored_pairs.sql",
-        "models/marts/potential_duplicates.sql",
-        "models/marts/record_status.sql",
-        "models/marts/companies_to_import.sql",
-        "models/marts/company_post_import.sql",
-        "models/schema.yml",
+        "models/staging/schema.yml",
+        "models/staging/stg_company.sql",
+        "models/staging/stg_purchased_company.sql",
+        "models/transform/schema.yml",
+        "models/transform/trn_scored_pairs.sql",
+        "models/conformed/schema.yml",
+        "models/conformed/dim_company_duplicates.sql",
+        "models/conformed/dim_record_status.sql",
+        "models/conformed/dim_company_purchased.sql",
+        "models/conformed/dim_company.sql",
+        "tests/schema.yml",
+        "tests/assert_match_keys_present.sql",
     ]
     models = {"files": [
         {"path": p, "sql": (ROOT / p).read_text()} for p in model_files
@@ -122,6 +157,7 @@ def main() -> None:
         ("next_file.json", {"name": next_file, "rows": next_rows}),
         ("logs.json", logs),
         ("models.json", models),
+        ("model_data.json", model_data),
     ]:
         (OUT / name).write_text(json.dumps(payload, indent=1, default=str) + "\n")
         print(f"wrote docs/data/{name}")
