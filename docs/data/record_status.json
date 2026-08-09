@@ -82,5 +82,89 @@
   "status": "new",
   "matched_id": null,
   "matched_name": null
+ },
+ {
+  "record_key": "list_b-001",
+  "source_file": "list_b",
+  "company_name": "7-11",
+  "address_1": "218 Peachtree NW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": null,
+  "status": "duplicate_of_crm",
+  "matched_id": "1",
+  "matched_name": "7-Eleven"
+ },
+ {
+  "record_key": "list_b-002",
+  "source_file": "list_b",
+  "company_name": "Home Depot #123",
+  "address_1": "2455 Paces Ferry Rd SE",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30339",
+  "status": "duplicate_of_crm",
+  "matched_id": "2",
+  "matched_name": "Home Depot"
+ },
+ {
+  "record_key": "list_b-003",
+  "source_file": "list_b",
+  "company_name": "Piedmont Coffee",
+  "address_1": "500 10th St NW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30318",
+  "status": "duplicate_cross_file",
+  "matched_id": "list_a-006",
+  "matched_name": "Piedmont Coffee Co"
+ },
+ {
+  "record_key": "list_b-004",
+  "source_file": "list_b",
+  "company_name": "Delta Airlines",
+  "address_1": "1030 Delta Blvd",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30354",
+  "status": "duplicate_of_crm",
+  "matched_id": "3",
+  "matched_name": "Delta Air Lines"
+ },
+ {
+  "record_key": "list_b-005",
+  "source_file": "list_b",
+  "company_name": "Sunrise Bakery",
+  "address_1": "77 Marietta St NW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30303",
+  "status": "new",
+  "matched_id": null,
+  "matched_name": null
+ },
+ {
+  "record_key": "list_b-006",
+  "source_file": "list_b",
+  "company_name": "Sunrise Bakery LLC",
+  "address_1": "77 Marietta Street NW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30303",
+  "status": "duplicate_within_file",
+  "matched_id": "list_b-005",
+  "matched_name": "Sunrise Bakery"
+ },
+ {
+  "record_key": "list_b-007",
+  "source_file": "list_b",
+  "company_name": "Rockdale Paper Supply",
+  "address_1": "1100 Sigman Road",
+  "city": "Conyers",
+  "state": "GA",
+  "zip": "30012",
+  "status": "new",
+  "matched_id": null,
+  "matched_name": null
  }
 ]

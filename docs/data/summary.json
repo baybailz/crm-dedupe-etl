@@ -1,22 +1,24 @@
 {
- "generated_at": "2026-08-08T23:44:16+00:00",
- "companies_total": 7,
- "companies_imported": 2,
- "records_processed": 7,
- "duplicates_blocked": 4,
+ "generated_at": "2026-08-09T00:01:49+00:00",
+ "companies_total": 9,
+ "companies_imported": 4,
+ "records_processed": 14,
+ "duplicates_blocked": 9,
  "needs_review": 1,
  "status_counts": {
-  "duplicate_of_crm": 4,
+  "duplicate_of_crm": 7,
   "needs_review": 1,
-  "new": 2
+  "new": 4,
+  "duplicate_cross_file": 1,
+  "duplicate_within_file": 1
  },
  "files_loaded": [
-  "list_a"
+  "list_a",
+  "list_b"
  ],
  "files_pending": [
-  "list_b",
   "list_c",
   "list_d"
  ],
- "next_file": "list_b"
+ "next_file": "list_c"
 }
