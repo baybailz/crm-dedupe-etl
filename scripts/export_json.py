@@ -97,6 +97,23 @@ def main() -> None:
         "dbt": read_log(args.dbt_log),
     }
 
+    # The dbt project source, for the presentation's model browser —
+    # published from the repo itself so the deck can never drift from the code.
+    model_files = [
+        "macros/normalize.sql",
+        "models/staging/stg_crm_company.sql",
+        "models/staging/stg_list_company.sql",
+        "models/intermediate/int_scored_pairs.sql",
+        "models/marts/potential_duplicates.sql",
+        "models/marts/record_status.sql",
+        "models/marts/companies_to_import.sql",
+        "models/marts/company_post_import.sql",
+        "models/schema.yml",
+    ]
+    models = {"files": [
+        {"path": p, "sql": (ROOT / p).read_text()} for p in model_files
+    ]}
+
     for name, payload in [
         ("summary.json", summary),
         ("company.json", company),
@@ -104,6 +121,7 @@ def main() -> None:
         ("potential_duplicates.json", dupes),
         ("next_file.json", {"name": next_file, "rows": next_rows}),
         ("logs.json", logs),
+        ("models.json", models),
     ]:
         (OUT / name).write_text(json.dumps(payload, indent=1, default=str) + "\n")
         print(f"wrote docs/data/{name}")

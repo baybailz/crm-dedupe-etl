@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Vendor-list dedupe ETL — presentation + live console. Python, dbt, DuckDB/Snowflake, GitHub Actions.">
-<title>Vendor List Import — ETL Demo</title>
+<meta name="description" content="Vendor-list dedupe ETL: presentation + live console. Python, dbt, DuckDB/Snowflake, GitHub Actions.">
+<title>Vendor List Import · ETL Demo</title>
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%23016698"/><path d="M36 10 18 36h11l-3 18 20-28H34l2-16z" fill="white"/></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -430,7 +430,7 @@
   <ol>
     <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → fine-grained tokens</a></li>
     <li>Repository access: <b>Only select repositories → crm-dedupe-etl</b></li>
-    <li>Permissions: <b>Actions — read &amp; write</b> · <b>Contents — read</b></li>
+    <li>Permissions: <b>Actions: read &amp; write</b> · <b>Contents: read</b></li>
   </ol>
   <input id="tokenInput" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
   <div class="row">
@@ -459,13 +459,14 @@ const ICO = {
 };
 const STATUS_META = {
   new:{label:'new',cls:'b-new',ico:ICO.check},
-  duplicate_of_crm:{label:'dup — CRM',cls:'b-dup',ico:ICO.copy},
-  duplicate_cross_file:{label:'dup — other file',cls:'b-dup',ico:ICO.copy},
-  duplicate_within_file:{label:'dup — same file',cls:'b-dup',ico:ICO.copy},
+  duplicate_of_crm:{label:'dup · CRM',cls:'b-dup',ico:ICO.copy},
+  duplicate_cross_file:{label:'dup · other file',cls:'b-dup',ico:ICO.copy},
+  duplicate_within_file:{label:'dup · same file',cls:'b-dup',ico:ICO.copy},
   needs_review:{label:'needs review',cls:'b-review',ico:ICO.flag},
 };
 
-let D = {summary:null, company:[], log:[], dupes:[], next:{name:null,rows:[]}, logs:null};
+let D = {summary:null, company:[], log:[], dupes:[], next:{name:null,rows:[]}, logs:null, models:null};
+let modelPick = 'models/intermediate/int_scored_pairs.sql';
 let prevSummary=null, prevCompanyIds=null;
 let mode='present', slideIdx=0, slideDir=1;
 let currentTab='company', logFilter='all', dupeFilter='all', searchCompany='', searchLog='';
@@ -517,7 +518,8 @@ async function loadAll(viaApi=false){
     ['summary.json','company.json','record_status.json','potential_duplicates.json','next_file.json']
       .map(n=>fetchJson(n,viaApi)));
   const logs=await fetchJson('logs.json',viaApi).catch(()=>null);
-  D={summary,company,log,dupes,next,logs};
+  const models=await fetchJson('models.json',viaApi).catch(()=>null);
+  D={summary,company,log,dupes,next,logs,models};
   render();
 }
 
@@ -527,7 +529,7 @@ function highlight(code, lang){
     py:[[/#.*$/m,'c-com'],[/'[^'\n]*'|"[^"\n]*"/,'c-str'],
         [/\b(def|return|if|elif|else|for|in|not|with|open|import|from|as|None|True|False|and|or|start|print)\b/,'c-kw'],
         [/\b\d+\b/,'c-num']],
-    sql:[[/--.*$/m,'c-com'],[/\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/,'c-jinja'],[/'[^'\n]*'/,'c-str'],
+    sql:[[/--.*$/m,'c-com'],[/\{#[\s\S]*?#\}/,'c-com'],[/\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/,'c-jinja'],[/'[^'\n]*'/,'c-str'],
         [/\b(select|from|join|left|right|inner|on|where|case|when|then|else|end|as|with|and|or|not|null|is|union|all|coalesce|row_number|over|partition|by|order|group|using|cast|varchar|true|false|min|max|desc)\b/i,'c-kw'],
         [/\b\d+(\.\d+)?\b/,'c-num']],
     yml:[[/#.*$/m,'c-com'],[/"[^"\n]*"|'[^'\n]*'/,'c-str'],
@@ -579,29 +581,32 @@ if queue:                    # ONE file per run
 write_state(loaded)
 rebuild_seed(loaded)         # -> seeds/vendor_records.csv`;
 
-const SQL_SNIPPET=`-- 1 · normalized match keys (macros: strip suffixes, USPS abbrevs, aliases)
-{{ normalize_company_name('company_name') }}  as name_norm,
-{{ normalize_address('address_1') }}          as address_norm,
+const SQL_SNIPPET=`-- 1 · normalized match keys (macros/normalize.sql)
+{{ normalize_company_name('company_name') }} as name_norm,
+{{ normalize_address('address_1') }}         as address_norm,
 
--- 2 · blocking: only compare pairs that share geography
+-- 2 · blocking: only compare pairs sharing geography
 from list_recs a
 join crm b
   on a.zip5 = b.zip5
-  or (a.city_norm = b.city_norm and a.state_norm = b.state_norm)
+  or (a.city_norm = b.city_norm
+      and a.state_norm = b.state_norm)
 
 -- 3 · fuzzy + exact signals per candidate pair
-{{ similarity('a.name_match', 'b.name_match') }}     as name_sim,
-{{ similarity('a.address_norm', 'b.address_norm') }} as addr_sim,
-(a.street_num = b.street_num)                        as street_match,
-(a.phone10 = b.phone10)                              as phone_match,
+{{ similarity('a.name_match', 'b.name_match') }} as name_sim,
+(a.street_num = b.street_num)                as street_match,
+(a.phone10 = b.phone10)                      as phone_match,
 
 -- 4 · tiered classification
 case
   when name_sim >= 0.85 and geo_match
-       and street_match and addr_sim >= 0.70   then 'duplicate'
+       and street_match and addr_sim >= 0.70
+                                  then 'duplicate'
   when (phone_match or domain_match)
-       and name_sim >= 0.80 and street_match   then 'duplicate'
-  when name_sim >= 0.92 and geo_match          then 'review'
+       and name_sim >= 0.80 and street_match
+                                  then 'duplicate'
+  when name_sim >= 0.92 and geo_match
+                                  then 'review'
 end as match_class`;
 
 const YML_TESTS=`models:
@@ -725,7 +730,7 @@ const SLIDES=[
       </div>
       <p class="lead">Two vendor CSV files, one CRM company table. Find the duplicates
         (across the files <i>and</i> against the CRM), import only what's new, and give
-        every record a disposition — then prove it end-to-end with a live run.</p>
+        every record a disposition. Then prove it with a live run.</p>
       <div class="byline">Bailey Thompson · solution deck + working demo</div>
     </div>`;}},
   {id:'problem',kicker:'THE PROBLEM',render(){
@@ -744,13 +749,13 @@ const SLIDES=[
       </table></div>
       <p class="lead" style="margin-top:18px">The last one matters most: a pipeline that quietly guesses
         would either <b>merge a real second location away</b> or <b>import a duplicate</b>.
-        Mine refuses to guess — it routes that row to a human.</p>`;}},
+        Mine refuses to guess. That row goes to a human.</p>`;}},
   {id:'arch',kicker:'ARCHITECTURE',render(){
     return `<div class="kicker">Architecture</div>
       <h2>A static page driving a real pipeline</h2>
-      <p class="lead">The demo console is plain GitHub Pages. The Load button dispatches a GitHub Actions
-        workflow that runs the actual ELT — Python ingest, dbt transform + tests — and commits the
-        result tables back as JSON. Nothing is mocked.</p>
+      <p class="lead">The console is plain GitHub Pages. The Load button dispatches a GitHub Actions
+        workflow that runs the pipeline and commits the result tables back as JSON.
+        Nothing is mocked.</p>
       <div class="diagram">${svgArch()}</div>`;}},
   {id:'python',kicker:'STEP 1 · PYTHON',render(){
     return `<div class="kicker">Step 1 · Extract &amp; load</div>
@@ -761,41 +766,65 @@ const SLIDES=[
           <li><span class="pt">1</span><span><b>One file per invocation.</b> The queue is
             <span class="mono">incoming/*.csv</span>; a JSON state file records what's loaded, in order.</span></li>
           <li><span class="pt">2</span><span><b>Lineage from the first byte.</b> Every record is stamped
-            <span class="mono">source_file + row_num</span> — any CRM row traces back to its exact file and line.</span></li>
-          <li><span class="pt">3</span><span><b>Deterministic &amp; replayable.</b> The state file fully
-            describes the world; re-running rebuilds the same seed. Against Snowflake this same step is
+            <span class="mono">source_file + row_num</span>, so any CRM row traces back to its file and line.</span></li>
+          <li><span class="pt">3</span><span><b>Deterministic.</b> The state file says exactly what's loaded;
+            re-runs rebuild the same seed. On Snowflake this step is
             <span class="mono">PUT + COPY INTO</span> with <span class="mono">metadata$file_row_number</span>.</span></li>
         </ul>
       </div>`;}},
   {id:'lineage',kicker:'STEP 2 · DBT',render(){
     return `<div class="kicker">Step 2 · Transform</div>
-      <h2>dbt lineage — raw seeds to final marts</h2>
+      <h2>dbt lineage: seeds to marts</h2>
       <p class="lead">Version-controlled SQL, tested at every layer. <span class="mono">dbt build</span> runs
-        this graph in dependency order on DuckDB locally — the same models compile to Snowflake unchanged.</p>
+        this graph in dependency order on DuckDB. The same models compile to Snowflake unchanged.</p>
       <div class="diagram">${svgDag()}</div>
       <div class="legend">
         <span><span class="sw seed"></span>seeds / raw</span>
-        <span><span class="sw stg"></span>staging — normalize match keys</span>
-        <span><span class="sw int"></span>intermediate — block · score · classify</span>
-        <span><span class="sw mart"></span>marts — the three deliverables + final table</span>
+        <span><span class="sw stg"></span>staging · normalize keys</span>
+        <span><span class="sw int"></span>intermediate · block, score, classify</span>
+        <span><span class="sw mart"></span>marts · deliverables + final table</span>
       </div>`;}},
   {id:'models',kicker:'STEP 2 · DBT MODELS',render(){
     return `<div class="kicker">Step 2 · The matching brain</div>
       <h2>Normalize → block → score → classify</h2>
+      <p class="lead">Make keys comparable, compare only neighbors, score each pair,
+        merge only when the evidence agrees.</p>
       <div class="cols">
         ${codePanel('models/intermediate/int_scored_pairs.sql','abridged',SQL_SNIPPET,'sql',470)}
         <ul class="pointlist">
           <li><span class="pt">1</span><span><b>Normalize</b> in macros: strip legal suffixes &amp; punctuation,
             alias <span class="mono">711 → 7 eleven</span> (a seed CSV, not code), USPS-abbreviate addresses,
             phone→digits, site→domain.</span></li>
-          <li><span class="pt">2</span><span><b>Block</b> on shared zip or city+state — near-linear
-            instead of N×M, so it scales to real list sizes.</span></li>
-          <li><span class="pt">3</span><span><b>Score</b> with Jaro-Winkler — built into both Snowflake
-            and DuckDB, no UDFs — plus hard signals: phone, domain, street number.</span></li>
-          <li><span class="pt">4</span><span><b>Classify</b> with tiers. The street-number guard is what
-            sends “same name, different address” to <b>review</b> instead of auto-merging.</span></li>
+          <li><span class="pt">2</span><span><b>Block</b> on shared zip or city+state.
+            Near-linear instead of N×M.</span></li>
+          <li><span class="pt">3</span><span><b>Score</b> with Jaro-Winkler (native in Snowflake
+            and DuckDB, no UDFs) plus hard signals: phone, domain, street number.</span></li>
+          <li><span class="pt">4</span><span><b>Classify</b> with tiers. The street-number guard sends
+            “same name, different address” to <b>review</b> instead of auto-merging.</span></li>
         </ul>
       </div>`;}},
+  {id:'code',kicker:'STEP 2 · THE CODE',render(){
+    if(!D.models||!D.models.files?.length){
+      return `<div class="kicker">Step 2 · The code</div>
+        <h2>The dbt project, model by model</h2>
+        <p class="lead">Not published yet. It lands with the next pipeline run
+          (<span class="mono">docs/data/models.json</span>).</p>`;
+    }
+    const cur=D.models.files.find(f=>f.path===modelPick)||D.models.files[0];
+    const name=p=>p.split('/').pop();
+    const layer=p=>p.includes('macros')?'macro':p.includes('staging')?'staging'
+                  :p.includes('intermediate')?'intermediate':p.includes('marts')?'mart':'tests';
+    const lang=p=>p.endsWith('.yml')?'yml':'sql';
+    const lines=cur.sql.split('\n').length;
+    return `<div class="kicker">Step 2 · The code</div>
+      <h2>The dbt project, model by model</h2>
+      <p class="lead">Committed source, republished on every pipeline run.
+        ${D.models.files.length} files, ~${Math.round(D.models.files.reduce((a,f)=>a+f.sql.split('\n').length,0)/10)*10} lines of SQL + YAML.</p>
+      <div class="chips" style="padding:0 0 14px">
+        ${D.models.files.map(f=>`<button class="chip" data-mp="${esc(f.path)}"
+            aria-pressed="${f.path===cur.path}">${esc(name(f.path))}<span class="cnt">${esc(layer(f.path))}</span></button>`).join('')}
+      </div>
+      ${codePanel(cur.path,`${lines} lines · as committed`,cur.sql,lang(cur.path),440)}`;}},
   {id:'tests',kicker:'STEP 3 · TESTS',render(){
     return `<div class="kicker">Step 3 · Quality gates</div>
       <h2>Tests run in the same breath as the models</h2>
@@ -803,12 +832,12 @@ const SLIDES=[
         ${codePanel('models/schema.yml','data tests',YML_TESTS,'yml',470)}
         <ul class="pointlist">
           <li><span class="pt">✓</span><span><b>One verdict per record.</b> <span class="mono">record_key</span>
-            is unique and never null — no vendor row is dropped or double-judged.</span></li>
-          <li><span class="pt">✓</span><span><b>Closed status vocabulary.</b> Only the five agreed dispositions
-            can ever appear — a typo&#39;d status fails the build, not the sales report.</span></li>
+            is unique and never null. No row is dropped or double-judged.</span></li>
+          <li><span class="pt">✓</span><span><b>Closed status vocabulary.</b> Only five dispositions can
+            appear. A typo&#39;d status fails the build, not the sales report.</span></li>
           <li><span class="pt">✓</span><span><b>The CRM stays clean.</b> <span class="mono">company_id</span>
-            uniqueness on the post-import table is the contract: re-runs cannot double-insert
-            (belt) and the loader MERGEs on <span class="mono">source_record_key</span> (braces).</span></li>
+            uniqueness is the contract, and the loader MERGEs on
+            <span class="mono">source_record_key</span>. Re-runs cannot double-insert.</span></li>
           <li><span class="pt">✓</span><span><b>Failing tests block publish.</b> In CI, a red
             <span class="mono">dbt build</span> stops the workflow before anything is committed.</span></li>
         </ul>
@@ -816,7 +845,7 @@ const SLIDES=[
   {id:'table',kicker:'STEP 4 · RESULT',render(){
     const s=D.summary;
     if(!s) return `<div class="kicker">Step 4 · Result</div><h2>The final company table</h2>
-      <p class="lead">Live data hasn't loaded yet — check connectivity.</p>`;
+      <p class="lead">Live data hasn't loaded yet. Check connectivity.</p>`;
     const rows=D.company.map(c=>`
       <tr${c.record_source!=='crm'?' class="rowimp"':''}>
         <td class="num mono faded">${esc(c.company_id)}</td>
@@ -829,7 +858,7 @@ const SLIDES=[
     const sc=D.summary.status_counts||{};
     const chip=(k)=>sc[k]?`<span class="badge ${STATUS_META[k].cls}" style="font-size:12px">${STATUS_META[k].ico}${STATUS_META[k].label} · ${sc[k]}</span>`:'';
     return `<div class="kicker">Step 4 · Result</div>
-      <h2>The final company table — live, not a mockup</h2>
+      <h2>The final company table, live</h2>
       <p class="lead">${fmtN(s.companies_total)} companies · ${s.files_loaded.length} of
         ${s.files_loaded.length+s.files_pending.length} vendor files processed ·
         ${fmtN(s.duplicates_blocked)} duplicates blocked · ${fmtN(s.needs_review)} routed to review.
@@ -846,10 +875,10 @@ const SLIDES=[
         <ul class="pointlist">
           <li><span class="pt">1</span><span><b>Dispatchable + parameterized.</b> The console (or the CLI)
             triggers it with <span class="mono">load_next</span> or <span class="mono">reset</span>.</span></li>
-          <li><span class="pt">2</span><span><b>Serialized.</b> A concurrency group means two eager clicks
+          <li><span class="pt">2</span><span><b>Serialized.</b> A concurrency group means two clicks
             can't race the state file.</span></li>
           <li><span class="pt">3</span><span><b>Fail-closed.</b> If any dbt test fails, the run dies before
-            the commit step — bad vendor data never reaches the published tables.</span></li>
+            the commit step. Bad data never reaches the published tables.</span></li>
           <li><span class="pt">4</span><span><b>Same commands as local.</b> CI runs exactly what I run on my
             laptop; in production this maps to Airflow/dagster + Snowflake with zero model changes.</span></li>
         </ul>
@@ -877,6 +906,7 @@ function renderPresent(){
   $('prevBtn').onclick=()=>gotoSlide(slideIdx-1);
   $('nextBtn').onclick=()=>gotoSlide(slideIdx+1);
   document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>gotoSlide(+b.dataset.goto));
+  document.querySelectorAll('[data-mp]').forEach(b=>b.onclick=()=>{modelPick=b.dataset.mp;renderPresent();});
 }
 function gotoSlide(i){
   if(i<0||i>=SLIDES.length)return;
@@ -910,7 +940,7 @@ function pipe(){
   const s=D.summary;
   const stages=[
     {key:'queue',ico:ICO.file,t:'Incoming queue',
-     d:s.next_file?`next: <span class="mono">${esc(s.next_file)}.csv</span> · ${s.files_pending.length} pending`:'queue empty — all files loaded'},
+     d:s.next_file?`next: <span class="mono">${esc(s.next_file)}.csv</span> · ${s.files_pending.length} pending`:'queue empty · all files loaded'},
     {key:'load',ico:ICO.py,t:'Python pickup',d:'<span class="mono">load_next.py</span> stamps file + row lineage'},
     {key:'dbt',ico:ICO.dbt,t:'dbt build',d:'normalize → block → fuzzy score → classify, then tests'},
     {key:'crm',ico:ICO.crm,t:'CRM company table',d:`<b>${fmtN(s.companies_total)}</b> companies · ${fmtN(s.duplicates_blocked)} dups blocked`},
@@ -956,7 +986,7 @@ function cta(){
   if(!s.next_file){
     b.innerHTML='Reset demo <span class="arr">↺</span>';b.onclick=confirmReset;
     sub.innerHTML=`All <b>${total}</b> files loaded · <b>${fmtN(s.companies_total)}</b> companies in the CRM ·
-      <b>${fmtN(s.duplicates_blocked)}</b> duplicates blocked along the way`;return;
+      <b>${fmtN(s.duplicates_blocked)}</b> duplicates blocked`;return;
   }
   const rows=(D.next.rows||[]).length;
   sub.innerHTML=`Next up: <b>${esc(s.next_file)}.csv</b>${rows?` (${rows} vendor records)`:''} ·
@@ -1039,7 +1069,7 @@ function panelIncoming(){
     return `<div class="card"><div class="empty">
       <div class="big">✦</div>
       <b>All vendor files are loaded.</b><br>
-      <span>${fmtN(D.summary.companies_total)} companies in the CRM, every duplicate blocked along the way.</span><br>
+      <span>${fmtN(D.summary.companies_total)} companies in the CRM.</span><br>
       <button class="btn btn-primary" id="resetBtn2">Reset the demo ↺</button>
     </div></div>`;
   }
@@ -1054,17 +1084,16 @@ function panelIncoming(){
     </tr>`).join('');
   return `<div class="card">
     <div class="cardhead"><h2><span class="mono">incoming/${esc(D.next.name)}.csv</span></h2>
-      <span class="hint">raw vendor data, exactly as purchased — not yet in the CRM</span></div>
+      <span class="hint">raw vendor data, not yet in the CRM</span></div>
     ${tableHTML(['#','Company','Address','Phone','Website'],rows)}
     <div class="loadbar">
       <button class="btn btn-primary" id="loadBtn" ${running?'disabled':''}>${
         running?'Pipeline running…'
         :token()?`Load ${esc(D.next.name)}.csv into the CRM<span class="arr">→</span>`
         :'Connect GitHub to load ⚙'}</button>
-      <span class="loadnote">Dispatches the <b>pipeline</b> workflow on GitHub Actions:
-        <span class="mono">load_next.py</span> picks up this file,
-        <span class="mono">dbt build</span> dedupes it against everything already in the CRM
-        (and runs the test suite), then these tables refresh live.</span>
+      <span class="loadnote">Dispatches the <b>pipeline</b> workflow:
+        <span class="mono">load_next.py</span> picks up the file,
+        <span class="mono">dbt build</span> dedupes and tests it, and these tables refresh.</span>
     </div>
   </div>`;
 }
@@ -1101,7 +1130,7 @@ function panelLog(){
     ${D.log.length
         ?(rows?tableHTML(['Record','Vendor record','Status','Matched to'],rows)
               :'<div class="empty">Nothing matches that filter.</div>')
-        :'<div class="empty"><div class="big">⟡</div>No files loaded yet — head to <b>Incoming file</b> and press the button.</div>'}
+        :'<div class="empty"><div class="big">⟡</div>No files loaded yet. Press Load on the <b>Incoming file</b> tab.</div>'}
   </div>`;
 }
 function panelDupes(){
@@ -1126,11 +1155,11 @@ function panelDupes(){
     </tr>`).join('');
   return `<div class="card">
     <div class="cardhead"><h2>potential_duplicates</h2>
-      <span class="hint">pair-level report for the sales team — Jaro-Winkler similarity per pair</span></div>
+      <span class="hint">pair-level report with Jaro-Winkler scores</span></div>
     ${D.dupes.length?`<div class="chips">${chip('all','All')}${chip('duplicate','Duplicate')}${chip('review','Needs review')}</div>`:''}
     ${D.dupes.length
         ?tableHTML(['Record','Vendor record','Matched against','Where','Name sim','Addr sim','Class'],rows)
-        :'<div class="empty"><div class="big">✓</div>No duplicate pairs yet — load a file and watch this fill up.</div>'}
+        :'<div class="empty"><div class="big">✓</div>No duplicate pairs yet.</div>'}
   </div>`;
 }
 function colorPy(line){
@@ -1175,7 +1204,7 @@ function panelLogs(){
   if(!L||(!L.python&&!L.dbt)){
     return `<div class="card"><div class="empty"><div class="big">▚</div>
       <b>No captured runs yet.</b><br>
-      <span>Press <b>Load</b> — the Python and dbt output from that exact CI run shows up here.</span>
+      <span>Press <b>Load</b>. The Python and dbt output from that run lands here.</span>
     </div></div>`;
   }
   const when=new Date(L.generated_at).toLocaleString([],{dateStyle:'medium',timeStyle:'short'});
@@ -1183,7 +1212,7 @@ function panelLogs(){
   const r=revealLogs;revealLogs=false;
   return `<div class="card">
     <div class="cardhead"><h2>run output</h2>
-      <span class="hint">captured from the last GitHub Actions run — <b>${esc(what)}</b> · ${esc(when)}</span></div>
+      <span class="hint">last CI run · <b>${esc(what)}</b> · ${esc(when)}</span></div>
     ${terminal('scripts/load_next.py','python 3.12 · ubuntu runner',L.python,colorPy,r)}
     ${terminal('dbt build','dbt-duckdb · models + data tests',L.dbt,colorDbt,r)}
   </div>`;
@@ -1288,7 +1317,7 @@ function phaseFromSteps(steps){
                [...steps].reverse().find(s=>s.status==='completed');
   if(!active)return['load','Runner starting…'];
   const n=active.name.toLowerCase();
-  if(n.includes('dbt'))return['dbt','Running dbt build — models + data tests…'];
+  if(n.includes('dbt'))return['dbt','Running dbt build: models + data tests…'];
   if(n.includes('export')||n.includes('commit'))return['publish','Publishing fresh tables…'];
   if(n.includes('load'))return['load',`Python picking up ${D.summary.next_file??'the next'}.csv…`];
   return['load',`CI: ${active.name}…`];
@@ -1326,13 +1355,13 @@ async function runPipeline(action){
         setPhase(ph,msg);
       }catch{}
     }
-    if(run.conclusion!=='success')throw new Error(`CI run ${run.conclusion} — check the Actions log`);
-    setPhase('refresh','Pipeline green — pulling fresh tables…');
+    if(run.conclusion!=='success')throw new Error(`CI run ${run.conclusion}. Check the Actions log`);
+    setPhase('refresh','Tests passed. Pulling fresh tables…');
     await sleep(1200);
     await loadAll(true);
     running=false;
     setPhase('done',action==='reset'
-      ?'Demo reset — the CRM is back to its original 5 companies.'
+      ?'Demo reset. Back to the original 5 companies.'
       :'Done. dbt tests passed and the CRM refreshed.');
     if(mode==='console'){currentTab=action==='reset'?'incoming':'logs';revealLogs=action!=='reset';}
     render();
@@ -1362,7 +1391,7 @@ function confirmReset(){
 $('gearBtn').onclick=()=>{$('tokenInput').value=token();$('tokenDlg').showModal();};
 $('tokenSave').onclick=()=>{
   const v=$('tokenInput').value.trim();
-  if(v){localStorage.setItem('gh_token',v);toast('Token saved — you\'re wired up ⚡');}
+  if(v){localStorage.setItem('gh_token',v);toast('Token saved ⚡');}
   $('tokenDlg').close();render();
 };
 $('tokenClear').onclick=()=>{localStorage.removeItem('gh_token');$('tokenInput').value='';$('tokenDlg').close();render();};
