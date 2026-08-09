@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Import two vendor lists, create zero duplicates. A live dedupe pipeline: Python, dbt, DuckDB/Snowflake, GitHub Actions.">
+<meta name="description" content="Import vendor lists, create zero duplicates. A live dedupe pipeline: Python, dbt, DuckDB/Snowflake, GitHub Actions.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Company Data Pipeline">
-<meta property="og:title" content="Import two vendor lists. Create zero duplicates.">
+<meta property="og:title" content="Import vendor lists. Create zero duplicates.">
 <meta property="og:description" content="A live dedupe pipeline you can run from the page: Python stages a file, dbt blocks and scores every candidate pair, GitHub Actions publishes the result.">
 <meta property="og:url" content="https://baybailz.github.io/crm-dedupe-etl/">
 <meta property="og:image" content="https://baybailz.github.io/crm-dedupe-etl/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Import two vendor lists. Create zero duplicates. python, dbt, duckdb/snowflake, github actions, jaro-winkler.">
+<meta property="og:image:alt" content="Import vendor lists. Create zero duplicates. python, dbt, duckdb/snowflake, github actions, jaro-winkler.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Import two vendor lists. Create zero duplicates.">
+<meta name="twitter:title" content="Import vendor lists. Create zero duplicates.">
 <meta name="twitter:description" content="A live dedupe pipeline you can run from the page: Python, dbt, DuckDB/Snowflake, GitHub Actions.">
 <meta name="twitter:image" content="https://baybailz.github.io/crm-dedupe-etl/og.png">
 <title>Company Data Pipeline</title>
@@ -301,23 +301,28 @@
   @keyframes attn{0%,100%{box-shadow:0 4px 16px var(--ring)}
                   50%{box-shadow:0 4px 16px var(--ring),0 0 0 7px color-mix(in srgb,var(--accent) 13%,transparent)}}
   .cta .spin{border-color:currentColor;border-top-color:transparent}
-  .pipe{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-  .logcol{padding:10px 18px;border-left:1px solid var(--border);min-width:0;
-    transition:background .25s}
-  .logcol:first-child{border-left:0;padding-left:2px}
-  .lch{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:800;
-    letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+  .pipe{flex:1;min-width:0}
+  .loggrid{display:grid;
+    grid-template-columns:max-content minmax(0,.78fr) minmax(0,1.47fr) minmax(0,1.05fr)}
+  .lgh,.lgc{padding:8px 16px;min-width:0;border-bottom:1px solid var(--border)}
+  .lgh:first-child,.lgc:first-child{padding-left:2px}
+  .lgh{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:800;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);padding-top:0}
   .lcs{width:7px;height:7px;border-radius:50%;background:var(--border2);flex:none}
-  .logcol.done .lcs{background:var(--good)}
-  .logcol.done .lch{color:var(--ink2)}
-  .logcol.active .lcs{background:var(--accent);
+  .lgh.done .lcs{background:var(--good)}
+  .lgh.done{color:var(--ink2)}
+  .lgh.active .lcs{background:var(--accent);
     box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
-  .logcol.active .lch{color:var(--accent)}
-  .logcol.active{background:var(--accent-soft)}
-  .lcl{font-family:"JetBrains Mono",monospace;font-size:11.6px;line-height:1.6;
-    color:var(--ink2);margin-top:7px;word-break:break-word}
-  .lcl .ok{color:var(--good)}
-  .lcl .dim{color:var(--ink3)}
+  .lgh.active{color:var(--accent)}
+  .lgc{font-family:"JetBrains Mono",monospace;font-size:11.6px;line-height:1.6;
+    color:var(--ink2);word-break:break-word;transition:background .25s}
+  .lgc:nth-last-child(-n+4){border-bottom:0}
+  .lgc.live{background:var(--accent-soft)}
+  .lgt{color:var(--ink3);white-space:nowrap}
+  .lgc.live.lgt{color:var(--accent);font-weight:600}
+  .lgc .ok{color:var(--good)}
+  .lgc .dim{color:var(--ink3)}
+  .lgc .spin{vertical-align:-2px}
   .runline{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink2);
     border-top:1px solid var(--border);margin-top:12px;padding-top:12px}
   .runline a{color:var(--accent);font-weight:600;text-decoration:none}
@@ -328,8 +333,6 @@
   .srclabel{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
     color:var(--ink3);padding-top:12px}
   .queue{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
-  .fchip.flying{position:fixed;z-index:70;margin:0;pointer-events:none;
-    box-shadow:0 8px 26px var(--ring)}
   @media (max-width:820px){
     .piperow{flex-direction:column}
     .srcbox{width:100%;padding:0 0 14px;border-right:0;border-bottom:1px dashed var(--border2)}
@@ -341,8 +344,9 @@
   .fchip.loaded{color:var(--good);background:var(--good-soft);border-color:var(--good-line)}
   .fchip.next{color:var(--accent);background:var(--accent-soft);border-color:var(--ring)}
   .fchip.loading{color:var(--accent);background:var(--accent-soft);border-color:var(--ring);
-    animation:pulse 1.2s ease-in-out infinite}
-  @keyframes pulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 12%,transparent)}}
+    animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 30%,transparent)}
+                   70%{box-shadow:0 0 0 7px color-mix(in srgb,var(--accent) 0%,transparent)}}
 
   .tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);
     border-radius:13px;padding:4px;width:max-content;max-width:100%;overflow-x:auto;margin-bottom:14px}
@@ -465,8 +469,15 @@
     .slidecount{order:6;width:100%;text-align:center}
     .keyhint{display:none}
     .pipe{grid-template-columns:1fr}
-    .logcol{border-left:0;border-top:1px solid var(--border);padding:10px 2px}
-    .logcol:first-child{border-top:0;padding-top:2px}
+    .loggrid{grid-template-columns:1fr}
+    .lgh{display:none}
+    .lgc{padding:2px 2px;border-bottom:0}
+    .lgc[data-l]::before{content:attr(data-l);display:block;font-family:inherit;
+      font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+      color:var(--ink3);margin-bottom:1px}
+    .lgc.lgt{padding-top:12px}
+    .lgc.lgend{padding-bottom:12px;border-bottom:1px solid var(--border)}
+    .loggrid .lgc:nth-last-child(-n+4){border-bottom:0}
     .ide.tall{height:auto;min-height:0}
     .ide .fx{max-height:148px}
     .ide .codebody{max-height:50vh}
@@ -573,13 +584,18 @@ function toggleIdeFull(){
 let prevSummary=null, prevCompanyIds=null;
 let mode='present', slideIdx=0, slideDir=1;
 let currentTab='incoming', dupeFilter='all', searchCompany='';
-let running=false, runPhase='idle', runLink=null, runMsg='';
+let running=false, runPhase='idle', runLink=null, runMsg='', histBase=0;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const token=()=>localStorage.getItem('gh_token')||'';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const fmtN=n=>Number(n).toLocaleString();
+const fmtTime=iso=>{
+  const d=new Date(iso||'');
+  return isNaN(d)?'—':d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',
+                                               second:'2-digit',hour12:false});
+};
 
 /* ================= theme ================= */
 const mq=matchMedia('(prefers-color-scheme: dark)');
@@ -850,13 +866,13 @@ const SLIDES=[
   {id:'title',kicker:'BI · ETL SCENARIO',render(){
     return `<div class="titleslide">
       <div class="kicker">Scenario walkthrough</div>
-      <h2>Import two vendor lists.<br>Create zero duplicates.</h2>
+      <h2>Import vendor lists.<br>Create zero duplicates.</h2>
       <div class="stackchips">
         <span class="schip hot">python</span><span class="schip hot">dbt</span>
         <span class="schip">duckdb / snowflake</span><span class="schip">github actions</span>
         <span class="schip">jaro-winkler</span>
       </div>
-      <p class="lead">Sales bought two lists of companies. Find the duplicates,
+      <p class="lead">Sales bought company lists. Find the duplicates,
         import what's new, and record what happened to every row.</p>
       <div class="byline">Bailey Thompson</div>
     </div>`;}},
@@ -870,14 +886,17 @@ const SLIDES=[
           abbreviations, legal suffixes, missing zips, and duplicates inside the file itself.</span></li>
         <li><span class="pt">3</span><span><b>Identity is name + address.</b> Not name alone:
           same name at a different street number is a second location, not a duplicate.</span></li>
-        <li><span class="pt">4</span><span><b>Medallion layering.</b> raw seeds → staging
+        <li><span class="pt">4</span><span><b>The team already runs dbt.</b> So this is built
+          in dbt, against their warehouse, in their conventions. It is a pull request to an
+          existing project, not a new tool to adopt.</span></li>
+        <li><span class="pt">5</span><span><b>Medallion layering.</b> raw seeds → staging
           (normalize) → transform (match) → conformed (publish). One job per layer, tested
           at each step.</span></li>
-        <li><span class="pt">5</span><span><b>Every row gets an outcome.</b> Nothing is
+        <li><span class="pt">6</span><span><b>Every row gets an outcome.</b> Nothing is
           dropped silently, and <span class="mono">dim_company</span> is incremental on
           <span class="mono">company_id</span>, so a repeated run upserts instead of
           duplicating.</span></li>
-        <li><span class="pt">6</span><span><b>Built to production standards.</b> Contracts sit
+        <li><span class="pt">7</span><span><b>Built to production standards.</b> Contracts sit
           beside the models they govern, materializations and tags are declared per model,
           and a steward maintains the alias list in a spreadsheet. Adding a blocking key is
           one line; adding a source is one staging model.</span></li>
@@ -1014,20 +1033,9 @@ addEventListener('keydown',e=>{
 });
 
 /* ================= console ================= */
-function stageState(key){
-  const order=['dispatch','load','dbt','publish','refresh','done'];
-  const map={queue:'dispatch',load:'load',dbt:'dbt',crm:'publish'};
-  if(runPhase==='idle')return'';
-  if(runPhase==='fail')return'';
-  const idx=order.indexOf(runPhase),mine=order.indexOf(map[key]);
-  if(runPhase==='done')return'done';
-  if(mine<idx)return'done';
-  if(mine===idx)return'active';
-  return'';
-}
 function pipe(){
   const s=D.summary, L=D.logs||{};
-  const order=['dispatch','load','dbt','publish','refresh','done'];
+  const order=['dispatch','setup','load','dbt','publish','refresh','done'];
   const state=key=>{
     if(runPhase==='idle'||runPhase==='fail')return '';
     const map={load:'load',dbt:'dbt',crm:'publish'};
@@ -1036,38 +1044,48 @@ function pipe(){
     return mine<idx?'done':mine===idx?'active':'';
   };
   const next=s.next_file;
-  const wasReset=L.action==='reset';
-  const waiting='<span class="dim">waiting…</span>';
-  const pick=(key,active,doneNow,resting)=>{
-    const st=state(key);
-    if(!running)return resting;
-    return st==='active'?active:st==='done'?doneNow:waiting;
-  };
-  const cols=[
-    {key:'load',t:'Python',
-     line:pick('load',`loading ${esc(next||'')}.csv…`,`loaded ${esc(next||'')}.csv`,
-       L.loaded_file?`loaded ${esc(L.loaded_file)}.csv`
-       :wasReset?'<span class="dim">reset · queue cleared</span>'
-                :'<span class="dim">no run yet</span>')},
-    {key:'dbt',t:'dbt build',
-     line:pick('dbt','dbt build --select tag:master_data…','models + tests complete',
-       L.passed?`dbt build --select tag:master_data · <span class="ok">PASS=${L.passed}</span>`
-               :'<span class="dim">no run yet</span>')},
-    {key:'crm',t:'Conformed tables',
-     line:pick('crm','publishing…','published',
-       L.loaded_file?`dim_company → added ${L.added} records`
-       :wasReset?`dim_company → ${fmtN(s.companies_total)} records`
-                :'<span class="dim">no run yet</span>')},
-  ];
-  $('pipe').innerHTML=cols.map(c=>
-    `<div class="logcol ${state(c.key)}">
-       <span class="lch"><span class="lcs"></span>${esc(c.t)}</span>
-       <div class="lcl">${c.line}</div>
-     </div>`).join('');
+  const dim=t=>`<span class="dim">${t}</span>`;
+  const cell=(v,cls,label)=>`<div class="lgc ${cls}"${label?` data-l="${label}"`:''}>${v}</div>`;
+  const row=(time,py,db,cf,cls='')=>
+    cell(time,`lgt ${cls}`,'Time')+cell(py,cls,'Python')+
+    cell(db,cls,'dbt build')+cell(cf,`lgend ${cls}`,'Conformed tables');
+
+  const hist=(L.history||[]).slice(-8);
+  const rows=hist.map(e=>{
+    const py=e.action==='reset'?dim('reset · queue cleared')
+            :e.loaded_file?`loaded ${esc(e.loaded_file)}.csv`:dim('nothing left to load');
+    const db=e.passed?`dbt build --select tag:master_data · <span class="ok">PASS=${e.passed}</span>`
+            :dim('—');
+    const cf=e.action==='reset'?`dim_company → ${fmtN(e.companies_total??s.companies_total)} records`
+            :e.loaded_file?`dim_company → added ${e.added} records`:dim('—');
+    return row(`<span title="${esc(e.at||'')}">${fmtTime(e.at)}</span>`,py,db,cf);
+  });
+
+  // The live row is replaced by the real one the moment CI publishes it.
+  if(running&&(L.history||[]).length<=histBase){
+    const st=k=>state(k);
+    rows.push(row('now',
+      st('load')===''?dim('waiting for a runner…')
+        :st('load')==='active'?`staging ${esc(next||'')}.csv…`
+        :`loaded ${esc(next||'')}.csv`,
+      st('dbt')===''?dim('waiting…')
+        :st('dbt')==='active'?'running models + tests…':'complete',
+      st('crm')===''?dim('waiting…')
+        :st('crm')==='active'?'publishing…':'published',
+      'live'));
+  }
+  if(!rows.length)rows.push(row(dim('—'),dim('no run yet'),dim('no run yet'),dim('no run yet')));
+
+  const heads=[['load','Python'],['dbt','dbt build'],['crm','Conformed tables']];
+  $('pipe').innerHTML='<div class="loggrid">'+
+    '<div class="lgh">Time</div>'+
+    heads.map(([k,t])=>`<div class="lgh ${state(k)}"><span class="lcs"></span>${t}</div>`).join('')+
+    rows.join('')+'</div>';
+
   const all=[...s.files_loaded,...s.files_pending];
   $('queue').innerHTML=all.map(f=>{
     const loaded=s.files_loaded.includes(f),isNext=f===s.next_file;
-    const loading=running&&isNext&&['dispatch','load','dbt','publish','refresh'].includes(runPhase);
+    const loading=running&&isNext&&order.includes(runPhase)&&runPhase!=='done';
     const cls=loading?'loading':loaded?'loaded':isNext?'next':'';
     const mark=loading?'<span class="spin"></span>':loaded?'✓':isNext?'→':'·';
     return `<span class="fchip ${cls}" data-file="${esc(f)}">${mark}<span class="mono">${esc(f)}.csv</span></span>`;
@@ -1297,33 +1315,19 @@ async function gh(path,opts={}){
   if(!r.ok&&r.status!==204)throw new Error(`GitHub API ${r.status} on ${path.split('?')[0]}`);
   return r.status===204?null:r.json();
 }
-function flyFileIntoPipeline(name){
-  const pill=document.querySelector(`.fchip[data-file="${name}"]`);
-  const target=document.querySelector('.pipe .logcol');
-  if(!pill||!target||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  const from=pill.getBoundingClientRect(), to=target.getBoundingClientRect();
-  const clone=pill.cloneNode(true);
-  clone.classList.add('flying');
-  Object.assign(clone.style,{left:from.left+'px',top:from.top+'px',width:from.width+'px'});
-  document.body.appendChild(clone);
-  pill.style.opacity='.2';
-  requestAnimationFrame(()=>{
-    clone.style.transition='transform .9s cubic-bezier(.45,0,.25,1),opacity .9s ease-in';
-    clone.style.transform=`translate(${to.left+18-from.left}px,${to.top+40-from.top}px) scale(.9)`;
-    clone.style.opacity='0';
-  });
-  setTimeout(()=>{clone.remove();pill.style.opacity='';},960);
-}
 function setPhase(phase,msg){runPhase=phase;runMsg=msg;if(mode==='console'&&$('pipe'))pipe();}
 function phaseFromSteps(steps){
+  // Setup steps (checkout, python, dbt install) are most of the wall clock.
+  // They map to 'setup' so the log does not claim work that has not started.
   const active=steps.find(s=>s.status==='in_progress')||
                [...steps].reverse().find(s=>s.status==='completed');
-  if(!active)return['load','Runner starting…'];
+  if(!active)return['setup','Waiting for a runner…'];
   const n=active.name.toLowerCase();
-  if(n.includes('dbt'))return['dbt','Running dbt build: models + data tests…'];
-  if(n.includes('export')||n.includes('commit'))return['publish','Publishing fresh tables…'];
-  if(n.includes('load')||n.includes('stage'))return['load',`Python picking up ${D.summary.next_file??'the next'}.csv…`];
-  return['load',`CI: ${active.name}…`];
+  if(n.includes('dbt build'))return['dbt','dbt build: models + data tests…'];
+  if(n.includes('export')||n.includes('presentation')||n.includes('commit'))
+    return['publish','Publishing fresh tables…'];
+  if(n.includes('stage'))return['load',`Staging ${D.summary.next_file??'the next file'}.csv…`];
+  return['setup',`CI: ${active.name}…`];
 }
 async function runPipeline(action){
   if(!token()){toast('Only the repository owner can start a run.');return;}
@@ -1332,9 +1336,8 @@ async function runPipeline(action){
   prevSummary={...D.summary};
   prevCompanyIds=new Set(D.company.map(c=>c.company_id));
   runLink=null;
-  const flying=action!=='reset'?D.summary.next_file:null;
+  histBase=(D.logs?.history||[]).length;
   setPhase('dispatch',action==='reset'?'Resetting the demo…':'Dispatching the pipeline workflow…');
-  if(flying)flyFileIntoPipeline(flying);
   if(mode==='console')renderPanel();
   try{
     const t0=new Date(Date.now()-15000).toISOString();
@@ -1348,18 +1351,26 @@ async function runPipeline(action){
     }
     if(!run)throw new Error('workflow run never appeared');
     runLink=run.html_url;
-    setPhase('load','Runner starting…');
+    setPhase('setup','Waiting for a runner…');
+    // Poll the job itself: steps are short, so a slow tick misses them entirely.
     while(true){
-      await sleep(4000);
-      run=await gh(`/repos/${REPO}/actions/runs/${run.id}`);
-      if(run.status==='completed')break;
+      await sleep(2000);
+      let job=null;
       try{
         const jobs=await gh(`/repos/${REPO}/actions/runs/${run.id}/jobs`);
-        const steps=jobs.jobs?.[0]?.steps||[];
-        const [ph,msg]=phaseFromSteps(steps);
-        setPhase(ph,msg);
+        job=jobs.jobs?.[0]||null;
       }catch{}
+      if(job?.steps?.length){
+        const [ph,msg]=phaseFromSteps(job.steps);
+        setPhase(ph,msg);
+      }
+      if(job?.status==='completed')break;
+      if(!job){
+        const latest=await gh(`/repos/${REPO}/actions/runs/${run.id}`);
+        if(latest.status==='completed'){run=latest;break;}
+      }
     }
+    run=await gh(`/repos/${REPO}/actions/runs/${run.id}`);
     if(run.conclusion!=='success')throw new Error(`CI run ${run.conclusion}. Check the Actions log`);
     setPhase('refresh','Tests passed. Pulling fresh tables…');
     await sleep(1200);

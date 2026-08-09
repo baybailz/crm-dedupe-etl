@@ -9,7 +9,8 @@ the loader state and the incoming/ directory, and writes:
     record_status.json         every vendor record + disposition
     potential_duplicates.json  the pair-level duplicate report
     next_file.json             raw preview of the next pending file
-    logs.json                  captured stdout of the load + dbt steps
+    logs.json                  captured stdout of the load + dbt steps, plus
+                               a run history the console renders as a log
                                (--python-log / --dbt-log / --action)
 """
 
@@ -26,6 +27,7 @@ OUT = ROOT / "docs" / "data"
 DB = ROOT / "crm_dedupe.duckdb"
 STATE_FILE = ROOT / "state" / "loaded_files.json"
 INCOMING = ROOT / "incoming"
+HISTORY_LIMIT = 12
 
 
 def rows_of(con, sql: str) -> list[dict]:
@@ -109,12 +111,31 @@ def main() -> None:
         model_data = {rel: rows_of(con2, f"select * from main.{rel} order by all limit 120")
                       for rel in relations}
 
+    # Run history: the console shows a line per run, so every run appends
+    # here rather than overwriting. A reset starts the log over.
+    entry = {
+        "at": summary["generated_at"],
+        "action": args.action,
+        "loaded_file": last_file,
+        "added": added,
+        "passed": passed,
+        "companies_total": len(company),
+    }
+    previous = []
+    log_file = OUT / "logs.json"
+    if args.action != "reset" and log_file.exists():
+        try:
+            previous = json.loads(log_file.read_text()).get("history", [])
+        except (ValueError, OSError):
+            previous = []
+
     logs = {
         "generated_at": summary["generated_at"],
         "action": args.action,
         "loaded_file": last_file,
         "added": added,
         "passed": passed,
+        "history": (previous + [entry])[-HISTORY_LIMIT:],
         "python": read_log(args.python_log),
         "dbt": read_log(args.dbt_log),
     }

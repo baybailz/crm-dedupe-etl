@@ -1,6 +1,6 @@
-# Import two vendor lists. Create zero duplicates.
+# Import vendor lists. Create zero duplicates.
 
-Sales bought two lists of companies. Import them into the CRM without
+Sales bought company lists. Import them into the CRM without
 duplicating what is already there, and record what happened to every row.
 
 **[Live demo →](https://baybailz.github.io/crm-dedupe-etl/)** — a presentation
