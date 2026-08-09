@@ -102,5 +102,31 @@
   "primary_contact": null,
   "source": "list_a.csv",
   "source_record_key": "list_a-007"
+ },
+ {
+  "company_id": 9,
+  "company_name": "Sunrise Bakery",
+  "address": "77 Marietta St NW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30303",
+  "phone_number": "4045550161",
+  "website": "sunrisebakeryatl.com",
+  "primary_contact": null,
+  "source": "list_b.csv",
+  "source_record_key": "list_b-005"
+ },
+ {
+  "company_id": 10,
+  "company_name": "Rockdale Paper Supply",
+  "address": "1100 Sigman Road",
+  "city": "Conyers",
+  "state": "GA",
+  "zip": "30012",
+  "phone_number": "7705550128",
+  "website": "rockdalepaper.com",
+  "primary_contact": null,
+  "source": "list_b.csv",
+  "source_record_key": "list_b-007"
  }
 ]
