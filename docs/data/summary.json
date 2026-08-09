@@ -1,22 +1,16 @@
 {
- "generated_at": "2026-08-09T14:25:20+00:00",
- "companies_total": 13,
- "companies_imported": 8,
- "records_processed": 20,
- "duplicates_blocked": 12,
- "status_counts": {
-  "duplicate_of_crm": 9,
-  "new": 8,
-  "duplicate_cross_file": 2,
-  "duplicate_within_file": 1
- },
- "files_loaded": [
+ "generated_at": "2026-08-09T14:40:46+00:00",
+ "companies_total": 5,
+ "companies_imported": 0,
+ "records_processed": 0,
+ "duplicates_blocked": 0,
+ "status_counts": {},
+ "files_loaded": [],
+ "files_pending": [
   "list_a",
   "list_b",
-  "list_c"
- ],
- "files_pending": [
+  "list_c",
   "list_d"
  ],
- "next_file": "list_d"
+ "next_file": "list_a"
 }
