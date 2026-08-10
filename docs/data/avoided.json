@@ -9,105 +9,6 @@
    "phone_number": "(404) 555-0100",
    "source": "crm_company",
    "cluster_key": "7 eleven",
-   "in_cluster": true
-  },
-  {
-   "company_name": "7-Eleven",
-   "address": "218 Peachtree Street Northwest",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "phone_number": "404-555-0100",
-   "source": "list_a.csv",
-   "cluster_key": "7 eleven",
-   "in_cluster": true
-  },
-  {
-   "company_name": "7-Eleven, Inc.",
-   "address": "218 Peachtree St",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "phone_number": null,
-   "source": "list_a.csv",
-   "cluster_key": "7 eleven",
-   "in_cluster": true
-  },
-  {
-   "company_name": "7-Eleven",
-   "address": "1234 Peachtree St SE",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "phone_number": "404-555-0199",
-   "source": "list_a.csv",
-   "cluster_key": "7 eleven",
-   "in_cluster": true
-  },
-  {
-   "company_name": "711",
-   "address": "218 Peachtree St NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "phone_number": "4045550100",
-   "source": "list_a.csv",
-   "cluster_key": "7 eleven",
-   "in_cluster": true
-  },
-  {
-   "company_name": "7-11",
-   "address": "218 Peachtree NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": null,
-   "phone_number": "404-555-0100",
-   "source": "list_b.csv",
-   "cluster_key": "7 eleven",
-   "in_cluster": true
-  },
-  {
-   "company_name": "7-Eleven",
-   "address": "2650 Metropolitan Pkwy SW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30315",
-   "phone_number": "404-555-0121",
-   "source": "list_d.csv",
-   "cluster_key": "7 eleven",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Blue Heron Analytics",
-   "address": "890 Ponce de Leon Ave NE",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30306",
-   "phone_number": "404-555-0177",
-   "source": "list_a.csv",
-   "cluster_key": "blue heron analytics",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Blue Heron Analytics LLC",
-   "address": "890 Ponce de Leon Avenue NE",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30306",
-   "phone_number": "404-555-0177",
-   "source": "list_c.csv",
-   "cluster_key": "blue heron analytics",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Blue Sky Staffing",
-   "address": "1275 Peachtree St NE",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30309",
-   "phone_number": "404-555-0192",
-   "source": "list_d.csv",
-   "cluster_key": "blue sky staffing",
    "in_cluster": false
   },
   {
@@ -119,18 +20,7 @@
    "phone_number": "(404) 765-8000",
    "source": "crm_company",
    "cluster_key": "chick fil a",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Chick-fil-A Inc",
-   "address": "5200 Buffington Rd",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30349",
-   "phone_number": "404-765-8000",
-   "source": "list_c.csv",
-   "cluster_key": "chick fil a",
-   "in_cluster": true
+   "in_cluster": false
   },
   {
    "company_name": "Coca-Cola",
@@ -141,18 +31,7 @@
    "phone_number": "(404) 676-2121",
    "source": "crm_company",
    "cluster_key": "coca cola",
-   "in_cluster": true
-  },
-  {
-   "company_name": "The Coca-Cola Company",
-   "address": "1 Coca-Cola Plaza Northwest",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30313",
-   "phone_number": "(404) 676-2121",
-   "source": "list_c.csv",
-   "cluster_key": "coca cola",
-   "in_cluster": true
+   "in_cluster": false
   },
   {
    "company_name": "Delta Air Lines",
@@ -163,39 +42,6 @@
    "phone_number": "(404) 715-2600",
    "source": "crm_company",
    "cluster_key": "delta air lines",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Delta Airlines",
-   "address": "1030 Delta Blvd",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30354",
-   "phone_number": "404-715-2600",
-   "source": "list_b.csv",
-   "cluster_key": "delta air lines",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Delta Air Lines Inc",
-   "address": "1030 Delta Boulevard",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30354",
-   "phone_number": "404-715-2600",
-   "source": "list_d.csv",
-   "cluster_key": "delta air lines",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Georgia Grown Logistics",
-   "address": "4400 Fulton Industrial Blvd SW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30336",
-   "phone_number": "404-555-0158",
-   "source": "list_d.csv",
-   "cluster_key": "georgia grown logistics",
    "in_cluster": false
   },
   {
@@ -207,140 +53,8 @@
    "phone_number": "770-433-8211",
    "source": "crm_company",
    "cluster_key": "home depot",
-   "in_cluster": true
-  },
-  {
-   "company_name": "The Home Depot",
-   "address": "2455 Paces Ferry Rd Southeast",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30339",
-   "phone_number": "(770) 433-8211",
-   "source": "list_a.csv",
-   "cluster_key": "home depot",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Home Depot #123",
-   "address": "2455 Paces Ferry Rd SE",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30339",
-   "phone_number": "770.433.8211",
-   "source": "list_b.csv",
-   "cluster_key": "home depot 123",
    "in_cluster": false
-  },
-  {
-   "company_name": "Midtown Print Works",
-   "address": "847 Spring Street NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30308",
-   "phone_number": "404-555-0134",
-   "source": "list_c.csv",
-   "cluster_key": "midtown print works",
-   "in_cluster": false
-  },
-  {
-   "company_name": "Peachtree Dental Group",
-   "address": "3350 Riverwood Pkwy",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30339",
-   "phone_number": "770-555-0163",
-   "source": "list_c.csv",
-   "cluster_key": "peachtree dental group",
-   "in_cluster": false
-  },
-  {
-   "company_name": "Piedmont Coffee Co",
-   "address": "500 10th St NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30318",
-   "phone_number": "404-555-0142",
-   "source": "list_a.csv",
-   "cluster_key": "piedmont coffee",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Piedmont Coffee",
-   "address": "500 10th St NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30318",
-   "phone_number": null,
-   "source": "list_b.csv",
-   "cluster_key": "piedmont coffee",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Piedmont Coffee Co LLC",
-   "address": "500 10th Street NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30318",
-   "phone_number": null,
-   "source": "list_d.csv",
-   "cluster_key": "piedmont coffee",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Rockdale Paper Supply",
-   "address": "1100 Sigman Road",
-   "city": "Conyers",
-   "state": "GA",
-   "zip": "30012",
-   "phone_number": "770-555-0128",
-   "source": "list_b.csv",
-   "cluster_key": "rockdale paper supply",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Rockdale Paper Supply Co",
-   "address": "1100 Sigman Rd",
-   "city": "Conyers",
-   "state": "GA",
-   "zip": "30012",
-   "phone_number": "770-555-0128",
-   "source": "list_d.csv",
-   "cluster_key": "rockdale paper supply",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Sunrise Bakery",
-   "address": "77 Marietta St NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "phone_number": "404-555-0161",
-   "source": "list_b.csv",
-   "cluster_key": "sunrise bakery",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Sunrise Bakery LLC",
-   "address": "77 Marietta Street NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "phone_number": "404-555-0161",
-   "source": "list_b.csv",
-   "cluster_key": "sunrise bakery",
-   "in_cluster": true
-  },
-  {
-   "company_name": "Sunrise Bakery",
-   "address": "2200 Cheshire Bridge Rd NE",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30324",
-   "phone_number": "404-555-0186",
-   "source": "list_c.csv",
-   "cluster_key": "sunrise bakery",
-   "in_cluster": true
   }
  ],
- "duplicated": 26
+ "duplicated": 0
 }
