@@ -12,17 +12,6 @@
    "in_cluster": true
   },
   {
-   "company_name": "711",
-   "address": "218 Peachtree St NW",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
-   "phone_number": "4045550100",
-   "source": "list_a.csv",
-   "cluster_key": "7 eleven",
-   "in_cluster": true
-  },
-  {
    "company_name": "7-Eleven",
    "address": "218 Peachtree Street Northwest",
    "city": "Atlanta",
@@ -56,6 +45,17 @@
    "in_cluster": true
   },
   {
+   "company_name": "711",
+   "address": "218 Peachtree St NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "phone_number": "4045550100",
+   "source": "list_a.csv",
+   "cluster_key": "7 eleven",
+   "in_cluster": true
+  },
+  {
    "company_name": "7-11",
    "address": "218 Peachtree NW",
    "city": "Atlanta",
@@ -75,7 +75,18 @@
    "phone_number": "404-555-0177",
    "source": "list_a.csv",
    "cluster_key": "blue heron analytics",
-   "in_cluster": false
+   "in_cluster": true
+  },
+  {
+   "company_name": "Blue Heron Analytics LLC",
+   "address": "890 Ponce de Leon Avenue NE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30306",
+   "phone_number": "404-555-0177",
+   "source": "list_c.csv",
+   "cluster_key": "blue heron analytics",
+   "in_cluster": true
   },
   {
    "company_name": "Chick-fil-A",
@@ -86,7 +97,18 @@
    "phone_number": "(404) 765-8000",
    "source": "crm_company",
    "cluster_key": "chick fil a",
-   "in_cluster": false
+   "in_cluster": true
+  },
+  {
+   "company_name": "Chick-fil-A Inc",
+   "address": "5200 Buffington Rd",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30349",
+   "phone_number": "404-765-8000",
+   "source": "list_c.csv",
+   "cluster_key": "chick fil a",
+   "in_cluster": true
   },
   {
    "company_name": "Coca-Cola",
@@ -97,7 +119,18 @@
    "phone_number": "(404) 676-2121",
    "source": "crm_company",
    "cluster_key": "coca cola",
-   "in_cluster": false
+   "in_cluster": true
+  },
+  {
+   "company_name": "The Coca-Cola Company",
+   "address": "1 Coca-Cola Plaza Northwest",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30313",
+   "phone_number": "(404) 676-2121",
+   "source": "list_c.csv",
+   "cluster_key": "coca cola",
+   "in_cluster": true
   },
   {
    "company_name": "Delta Air Lines",
@@ -155,6 +188,28 @@
    "in_cluster": false
   },
   {
+   "company_name": "Midtown Print Works",
+   "address": "847 Spring Street NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30308",
+   "phone_number": "404-555-0134",
+   "source": "list_c.csv",
+   "cluster_key": "midtown print works",
+   "in_cluster": false
+  },
+  {
+   "company_name": "Peachtree Dental Group",
+   "address": "3350 Riverwood Pkwy",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30339",
+   "phone_number": "770-555-0163",
+   "source": "list_c.csv",
+   "cluster_key": "peachtree dental group",
+   "in_cluster": false
+  },
+  {
    "company_name": "Piedmont Coffee Co",
    "address": "500 10th St NW",
    "city": "Atlanta",
@@ -208,7 +263,18 @@
    "source": "list_b.csv",
    "cluster_key": "sunrise bakery",
    "in_cluster": true
+  },
+  {
+   "company_name": "Sunrise Bakery",
+   "address": "2200 Cheshire Bridge Rd NE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30324",
+   "phone_number": "404-555-0186",
+   "source": "list_c.csv",
+   "cluster_key": "sunrise bakery",
+   "in_cluster": true
   }
  ],
- "duplicated": 14
+ "duplicated": 21
 }
