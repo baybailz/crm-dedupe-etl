@@ -167,5 +167,44 @@
   "primary_contact": null,
   "source": "list_c.csv",
   "source_record_key": "list_c-006"
+ },
+ {
+  "company_id": 14,
+  "company_name": "Georgia Grown Logistics",
+  "address": "4400 Fulton Industrial Blvd SW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30336",
+  "phone_number": "4045550158",
+  "website": "gagrown.com",
+  "primary_contact": null,
+  "source": "list_d.csv",
+  "source_record_key": "list_d-001"
+ },
+ {
+  "company_id": 15,
+  "company_name": "7-Eleven",
+  "address": "2650 Metropolitan Pkwy SW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30315",
+  "phone_number": "4045550121",
+  "website": null,
+  "primary_contact": null,
+  "source": "list_d.csv",
+  "source_record_key": "list_d-005"
+ },
+ {
+  "company_id": 16,
+  "company_name": "Blue Sky Staffing",
+  "address": "1275 Peachtree St NE Floor 6",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30309",
+  "phone_number": "4045550192",
+  "website": "blueskystaffing.com",
+  "primary_contact": null,
+  "source": "list_d.csv",
+  "source_record_key": "list_d-006"
  }
 ]

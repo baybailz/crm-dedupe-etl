@@ -67,6 +67,17 @@
    "in_cluster": true
   },
   {
+   "company_name": "7-Eleven",
+   "address": "2650 Metropolitan Pkwy SW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30315",
+   "phone_number": "404-555-0121",
+   "source": "list_d.csv",
+   "cluster_key": "7 eleven",
+   "in_cluster": true
+  },
+  {
    "company_name": "Blue Heron Analytics",
    "address": "890 Ponce de Leon Ave NE",
    "city": "Atlanta",
@@ -87,6 +98,17 @@
    "source": "list_c.csv",
    "cluster_key": "blue heron analytics",
    "in_cluster": true
+  },
+  {
+   "company_name": "Blue Sky Staffing",
+   "address": "1275 Peachtree St NE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30309",
+   "phone_number": "404-555-0192",
+   "source": "list_d.csv",
+   "cluster_key": "blue sky staffing",
+   "in_cluster": false
   },
   {
    "company_name": "Chick-fil-A",
@@ -153,6 +175,28 @@
    "source": "list_b.csv",
    "cluster_key": "delta air lines",
    "in_cluster": true
+  },
+  {
+   "company_name": "Delta Air Lines Inc",
+   "address": "1030 Delta Boulevard",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30354",
+   "phone_number": "404-715-2600",
+   "source": "list_d.csv",
+   "cluster_key": "delta air lines",
+   "in_cluster": true
+  },
+  {
+   "company_name": "Georgia Grown Logistics",
+   "address": "4400 Fulton Industrial Blvd SW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30336",
+   "phone_number": "404-555-0158",
+   "source": "list_d.csv",
+   "cluster_key": "georgia grown logistics",
+   "in_cluster": false
   },
   {
    "company_name": "Home Depot",
@@ -232,6 +276,17 @@
    "in_cluster": true
   },
   {
+   "company_name": "Piedmont Coffee Co LLC",
+   "address": "500 10th Street NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30318",
+   "phone_number": null,
+   "source": "list_d.csv",
+   "cluster_key": "piedmont coffee",
+   "in_cluster": true
+  },
+  {
    "company_name": "Rockdale Paper Supply",
    "address": "1100 Sigman Road",
    "city": "Conyers",
@@ -240,7 +295,18 @@
    "phone_number": "770-555-0128",
    "source": "list_b.csv",
    "cluster_key": "rockdale paper supply",
-   "in_cluster": false
+   "in_cluster": true
+  },
+  {
+   "company_name": "Rockdale Paper Supply Co",
+   "address": "1100 Sigman Rd",
+   "city": "Conyers",
+   "state": "GA",
+   "zip": "30012",
+   "phone_number": "770-555-0128",
+   "source": "list_d.csv",
+   "cluster_key": "rockdale paper supply",
+   "in_cluster": true
   },
   {
    "company_name": "Sunrise Bakery",
@@ -276,5 +342,5 @@
    "in_cluster": true
   }
  ],
- "duplicated": 21
+ "duplicated": 26
 }
