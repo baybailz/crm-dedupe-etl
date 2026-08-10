@@ -1,82 +1,71 @@
 {
- "name": "list_b",
+ "name": "list_c",
  "rows": [
   {
-   "company_name": "7-11",
-   "address_1": "218 Peachtree NW",
+   "company_name": "Blue Heron Analytics LLC",
+   "address_1": "890 Ponce de Leon Avenue NE",
    "address_2": "",
    "address_3": "",
    "city": "Atlanta",
    "state": "GA",
-   "zip": "",
-   "website": "",
-   "primary_phone_number": "404-555-0100"
+   "zip": "30306",
+   "website": "www.blueheron.io",
+   "primary_phone_number": "404-555-0177"
   },
   {
-   "company_name": "Home Depot #123",
-   "address_1": "2455 Paces Ferry Rd SE",
+   "company_name": "Chick-fil-A Inc",
+   "address_1": "5200 Buffington Rd",
    "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30349",
+   "website": "chick-fil-a.com",
+   "primary_phone_number": "404-765-8000"
+  },
+  {
+   "company_name": "The Coca-Cola Company",
+   "address_1": "1 Coca-Cola Plaza Northwest",
+   "address_2": "",
+   "address_3": "",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30313",
+   "website": "coca-cola.com",
+   "primary_phone_number": "(404) 676-2121"
+  },
+  {
+   "company_name": "Peachtree Dental Group",
+   "address_1": "3350 Riverwood Pkwy",
+   "address_2": "Suite 1900",
    "address_3": "",
    "city": "Atlanta",
    "state": "GA",
    "zip": "30339",
-   "website": "",
-   "primary_phone_number": "770.433.8211"
-  },
-  {
-   "company_name": "Piedmont Coffee",
-   "address_1": "500 10th St NW",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30318",
-   "website": "www.piedmontcoffee.com",
-   "primary_phone_number": ""
-  },
-  {
-   "company_name": "Delta Airlines",
-   "address_1": "1030 Delta Blvd",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30354",
-   "website": "delta.com",
-   "primary_phone_number": "404-715-2600"
+   "website": "peachtreedental.com",
+   "primary_phone_number": "770-555-0163"
   },
   {
    "company_name": "Sunrise Bakery",
-   "address_1": "77 Marietta St NW",
+   "address_1": "2200 Cheshire Bridge Rd NE",
    "address_2": "",
    "address_3": "",
    "city": "Atlanta",
    "state": "GA",
-   "zip": "30303",
-   "website": "sunrisebakeryatl.com",
-   "primary_phone_number": "404-555-0161"
-  },
-  {
-   "company_name": "Sunrise Bakery LLC",
-   "address_1": "77 Marietta Street NW",
-   "address_2": "",
-   "address_3": "",
-   "city": "Atlanta",
-   "state": "GA",
-   "zip": "30303",
+   "zip": "30324",
    "website": "",
-   "primary_phone_number": "404-555-0161"
+   "primary_phone_number": "404-555-0186"
   },
   {
-   "company_name": "Rockdale Paper Supply",
-   "address_1": "1100 Sigman Road",
+   "company_name": "Midtown Print Works",
+   "address_1": "847 Spring Street NW",
    "address_2": "",
    "address_3": "",
-   "city": "Conyers",
+   "city": "Atlanta",
    "state": "GA",
-   "zip": "30012",
-   "website": "rockdalepaper.com",
-   "primary_phone_number": "770-555-0128"
+   "zip": "30308",
+   "website": "midtownprintworks.com",
+   "primary_phone_number": "404-555-0134"
   }
  ]
 }

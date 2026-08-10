@@ -6,3 +6,10 @@ list_a,4,7-Eleven,1234 Peachtree St SE,,,Atlanta,GA,30303,,404-555-0199
 list_a,5,The Home Depot,2455 Paces Ferry Rd Southeast,,,Atlanta,GA,30339,homedepot.com,(770) 433-8211
 list_a,6,Piedmont Coffee Co,500 10th St NW,,,Atlanta,GA,30318,piedmontcoffee.com,404-555-0142
 list_a,7,Blue Heron Analytics,890 Ponce de Leon Ave NE,,,Atlanta,GA,30306,blueheron.io,404-555-0177
+list_b,1,7-11,218 Peachtree NW,,,Atlanta,GA,,,404-555-0100
+list_b,2,Home Depot #123,2455 Paces Ferry Rd SE,,,Atlanta,GA,30339,,770.433.8211
+list_b,3,Piedmont Coffee,500 10th St NW,,,Atlanta,GA,30318,www.piedmontcoffee.com,
+list_b,4,Delta Airlines,1030 Delta Blvd,,,Atlanta,GA,30354,delta.com,404-715-2600
+list_b,5,Sunrise Bakery,77 Marietta St NW,,,Atlanta,GA,30303,sunrisebakeryatl.com,404-555-0161
+list_b,6,Sunrise Bakery LLC,77 Marietta Street NW,,,Atlanta,GA,30303,,404-555-0161
+list_b,7,Rockdale Paper Supply,1100 Sigman Road,,,Conyers,GA,30012,rockdalepaper.com,770-555-0128
