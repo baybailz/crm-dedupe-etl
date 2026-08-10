@@ -1329,13 +1329,10 @@ addEventListener('keydown',e=>{
 /* ================= console ================= */
 function pipe(){
   const s=D.summary, L=D.logs||{};
-  const order=['dispatch','setup','load','dbt','publish','refresh','done'];
-  const state=key=>{
+  const order=['dispatch','running','refresh','done'];
+  const state=()=>{
     if(runPhase==='idle'||runPhase==='fail')return '';
-    const map={load:'load',dbt:'dbt',crm:'publish'};
-    const idx=order.indexOf(runPhase), mine=order.indexOf(map[key]);
-    if(runPhase==='done')return 'done';
-    return mine<idx?'done':mine===idx?'active':'';
+    return runPhase==='done'?'done':'active';
   };
   const next=s.next_file;
   const dim=t=>`<span class="dim">${t}</span>`;
@@ -1357,16 +1354,8 @@ function pipe(){
 
   // The live row is replaced by the real one the moment CI publishes it.
   if(running&&(L.history||[]).length<=histBase){
-    const st=k=>state(k);
-    rows.push(row('now',
-      st('load')===''?dim('waiting for a runner…')
-        :st('load')==='active'?`staging ${esc(next||'')}.csv…`
-        :`loaded ${esc(next||'')}.csv`,
-      st('dbt')===''?dim('waiting…')
-        :st('dbt')==='active'?'running models + tests…':'complete',
-      st('crm')===''?dim('waiting…')
-        :st('crm')==='active'?'publishing…':'published',
-      'live'));
+    const r=dim('running…');
+    rows.push(row('now', r, r, r, 'live'));
   }
   if(!rows.length)rows.push(row(dim('—'),dim('no run yet'),dim('no run yet'),dim('no run yet')));
 
@@ -1379,7 +1368,7 @@ function pipe(){
   const all=[...s.files_loaded,...s.files_pending];
   $('queue').innerHTML=all.map(f=>{
     const loaded=s.files_loaded.includes(f),isNext=f===s.next_file;
-    const loading=running&&isNext&&order.includes(runPhase)&&runPhase!=='done';
+    const loading=running&&isNext&&runPhase!=='done';
     const cls=loading?'loading':loaded?'loaded':isNext?'next':'';
     const mark=loading?'<span class="spin"></span>':loaded?'✓':isNext?'→':'·';
     return `<span class="fchip ${cls}" data-file="${esc(f)}">${mark}<span class="mono">${esc(f)}.csv</span></span>`;
@@ -1616,19 +1605,6 @@ async function gh(path,opts={}){
   return r.status===204?null:r.json();
 }
 function setPhase(phase,msg){runPhase=phase;runMsg=msg;if(mode==='console'&&$('pipe'))pipe();}
-function phaseFromSteps(steps){
-  // Setup steps (checkout, python, dbt install) are most of the wall clock.
-  // They map to 'setup' so the log does not claim work that has not started.
-  const active=steps.find(s=>s.status==='in_progress')||
-               [...steps].reverse().find(s=>s.status==='completed');
-  if(!active)return['setup','Waiting for a runner…'];
-  const n=active.name.toLowerCase();
-  if(n.includes('dbt build'))return['dbt','dbt build: models + data tests…'];
-  if(n.includes('export')||n.includes('presentation')||n.includes('commit'))
-    return['publish','Publishing fresh tables…'];
-  if(n.includes('stage'))return['load',`Staging ${D.summary.next_file??'the next file'}.csv…`];
-  return['setup',`CI: ${active.name}…`];
-}
 async function runPipeline(action){
   if(!token()){toast('Only the repository owner can start a run.');return;}
   if(running)return;
@@ -1651,26 +1627,12 @@ async function runPipeline(action){
     }
     if(!run)throw new Error('workflow run never appeared');
     runLink=run.html_url;
-    setPhase('setup','Waiting for a runner…');
-    // Poll the job itself: steps are short, so a slow tick misses them entirely.
+    setPhase('running','Running…');
     while(true){
-      await sleep(2000);
-      let job=null;
-      try{
-        const jobs=await gh(`/repos/${REPO}/actions/runs/${run.id}/jobs`);
-        job=jobs.jobs?.[0]||null;
-      }catch{}
-      if(job?.steps?.length){
-        const [ph,msg]=phaseFromSteps(job.steps);
-        setPhase(ph,msg);
-      }
-      if(job?.status==='completed')break;
-      if(!job){
-        const latest=await gh(`/repos/${REPO}/actions/runs/${run.id}`);
-        if(latest.status==='completed'){run=latest;break;}
-      }
+      await sleep(3000);
+      run=await gh(`/repos/${REPO}/actions/runs/${run.id}`);
+      if(run.status==='completed')break;
     }
-    run=await gh(`/repos/${REPO}/actions/runs/${run.id}`);
     if(run.conclusion!=='success')throw new Error(`CI run ${run.conclusion}. Check the Actions log`);
     setPhase('refresh','Tests passed. Pulling fresh tables…');
     await sleep(1200);
