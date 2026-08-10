@@ -1,0 +1,11 @@
+# Seed properties.
+version: 2
+
+seeds:
+  - name: crm_company
+    description: Master company data, the system of record.
+    config:
+      tags: ['master_data']
+      column_types:
+        zip: varchar(10)
+        phone_number: varchar(20)

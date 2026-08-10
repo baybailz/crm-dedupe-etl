@@ -10,7 +10,7 @@ models:
         tests: [unique, not_null]
 
   - name: stg_purchased_company
-    description: Purchased vendor records with the same match keys.
+    description: Purchased company records with the same match keys.
     columns:
       - name: record_key
         tests: [unique, not_null]

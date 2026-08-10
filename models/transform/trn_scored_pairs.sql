@@ -1,14 +1,14 @@
--- The matching engine. Three moves:
---   1 block     candidate pairs from four equality passes:
---               zip5 · city+state · phone · domain. Each pass is one clean
---               hash join; add a key to the list below, add recall.
---   2 score     Jaro-Winkler on name + address, plus exact signals
---   3 classify  duplicate or nothing; same name at a different street
---               number is a new location, not a duplicate
--- Every vendor record is compared against the CRM and against every
--- earlier vendor record, so within-file and cross-file dups both fall out.
+-- The matching engine: block, score, classify.
+--   block     candidate pairs from the equality passes listed below
+--   score     Jaro-Winkler on name + address, plus exact signals
+--   classify  duplicate or nothing; a different street number is a new location
+-- Both match sides fold into match_targets first, so the blocking and the
+-- scoring are each written once instead of once per side.
 {{ config(materialized='view', tags=['master_data']) }}
 
+-- One pass per key below. Master data is always fair game; a purchased record
+-- only compares against purchased records that came before it, so each pair is
+-- produced once and within-file order is stable.
 {% set candidate_join_keys = [
     ['zip5'],
     ['city_norm', 'state_norm'],
@@ -16,7 +16,7 @@
     ['domain'],
 ] %}
 
-with list_records as (
+with purchased_records as (
     select * from {{ ref('stg_purchased_company') }}
 ),
 
@@ -24,90 +24,91 @@ crm_companies as (
     select * from {{ ref('stg_company') }}
 ),
 
-crm_candidates as (
-{% for keys in candidate_join_keys %}
-    select list_record.record_key, crm_company.company_id
-    from list_records as list_record
-    inner join crm_companies as crm_company
-        on {% for key in keys %}list_record.{{ key }} = crm_company.{{ key }}{{ ' and ' if not loop.last }}{% endfor %}
-    {{ 'union' if not loop.last }}
-{% endfor %}
-),
-
-file_candidates as (
-{% for keys in candidate_join_keys %}
-    select list_record.record_key, earlier_record.record_key as matched_key
-    from list_records as list_record
-    inner join list_records as earlier_record
-        on earlier_record.record_key < list_record.record_key
-        and {% for key in keys %}list_record.{{ key }} = earlier_record.{{ key }}{{ ' and ' if not loop.last }}{% endfor %}
-    {{ 'union' if not loop.last }}
-{% endfor %}
-),
-
-crm_pairs as (
+match_targets as (
+    -- everything a purchased record can match against, in one shape
     select
-        list_record.record_key,
-        list_record.source_file,
-        list_record.company_name,
-        list_record.address_1,
-        list_record.city,
-        list_record.state,
-        list_record.zip,
-        'crm'                                        as matched_side,
-        cast(crm_company.company_id as varchar)      as matched_id,
-        crm_company.company_name                     as matched_name,
-        crm_company.address                          as matched_address,
-        {{ similarity('list_record.name_match', 'crm_company.name_match') }}     as name_sim,
-        {{ similarity('list_record.address_norm', 'crm_company.address_norm') }} as addr_sim,
-        (list_record.zip5 = crm_company.zip5)        as zip_match,
-        (list_record.city_norm = crm_company.city_norm
-            and list_record.state_norm = crm_company.state_norm) as city_match,
-        (list_record.street_num is not null
-            and list_record.street_num = crm_company.street_num) as street_match,
-        (list_record.phone10 = crm_company.phone10)  as phone_match,
-        (list_record.domain = crm_company.domain)    as domain_match
-    from crm_candidates
-    inner join list_records as list_record
-        on list_record.record_key = crm_candidates.record_key
-    inner join crm_companies as crm_company
-        on crm_company.company_id = crm_candidates.company_id
-),
+        cast(crm_companies.company_id as varchar)  as target_id,
+        'crm'                                    as target_kind,
+        cast(null as varchar)                    as target_file,
+        crm_companies.company_name                 as target_name,
+        crm_companies.address                      as target_address,
+        crm_companies.name_match,
+        crm_companies.address_norm,
+        crm_companies.zip5,
+        crm_companies.city_norm,
+        crm_companies.state_norm,
+        crm_companies.street_num,
+        crm_companies.phone10,
+        crm_companies.domain
+    from crm_companies
 
-file_pairs as (
-    select
-        list_record.record_key,
-        list_record.source_file,
-        list_record.company_name,
-        list_record.address_1,
-        list_record.city,
-        list_record.state,
-        list_record.zip,
-        case when list_record.source_file = earlier_record.source_file
-             then 'within_file' else 'cross_file' end as matched_side,
-        earlier_record.record_key                    as matched_id,
-        earlier_record.company_name                  as matched_name,
-        earlier_record.address_1                     as matched_address,
-        {{ similarity('list_record.name_match', 'earlier_record.name_match') }}     as name_sim,
-        {{ similarity('list_record.address_norm', 'earlier_record.address_norm') }} as addr_sim,
-        (list_record.zip5 = earlier_record.zip5)     as zip_match,
-        (list_record.city_norm = earlier_record.city_norm
-            and list_record.state_norm = earlier_record.state_norm) as city_match,
-        (list_record.street_num is not null
-            and list_record.street_num = earlier_record.street_num) as street_match,
-        (list_record.phone10 = earlier_record.phone10) as phone_match,
-        (list_record.domain = earlier_record.domain)   as domain_match
-    from file_candidates
-    inner join list_records as list_record
-        on list_record.record_key = file_candidates.record_key
-    inner join list_records as earlier_record
-        on earlier_record.record_key = file_candidates.matched_key
-),
-
-scored as (
-    select * from crm_pairs
     union all
-    select * from file_pairs
+
+    select
+        purchased_records.record_key,
+        'purchased',
+        purchased_records.source_file,
+        purchased_records.company_name,
+        purchased_records.address_1,
+        purchased_records.name_match,
+        purchased_records.address_norm,
+        purchased_records.zip5,
+        purchased_records.city_norm,
+        purchased_records.state_norm,
+        purchased_records.street_num,
+        purchased_records.phone10,
+        purchased_records.domain
+    from purchased_records
+),
+
+candidates as (
+{% for keys in candidate_join_keys %}
+    select
+        purchased_records.record_key,
+        match_targets.target_id,
+        match_targets.target_kind
+    from purchased_records
+    inner join match_targets
+        on {% for key in keys %}purchased_records.{{ key }} = match_targets.{{ key }}{{ ' and ' if not loop.last }}{% endfor %}
+
+        and (match_targets.target_kind = 'crm'
+             or match_targets.target_id < purchased_records.record_key)
+    {{ 'union' if not loop.last }}
+{% endfor %}
+),
+
+pairs as (
+    select
+        purchased_records.record_key,
+        purchased_records.source_file,
+        purchased_records.company_name,
+        purchased_records.address_1,
+        purchased_records.city,
+        purchased_records.state,
+        purchased_records.zip,
+        case
+            when match_targets.target_kind = 'crm'                     then 'crm'
+            when match_targets.target_file = purchased_records.source_file   then 'within_file'
+            else 'cross_file'
+        end                                          as matched_side,
+        match_targets.target_id                       as matched_id,
+        match_targets.target_name                     as matched_name,
+        match_targets.target_address                  as matched_address,
+        {{ similarity('purchased_records.name_match', 'match_targets.name_match') }}     as name_sim,
+        {{ similarity('purchased_records.address_norm', 'match_targets.address_norm') }} as addr_sim,
+        (purchased_records.zip5 = match_targets.zip5)       as zip_match,
+        (purchased_records.city_norm = match_targets.city_norm
+            and purchased_records.state_norm = match_targets.state_norm) as city_match,
+        (purchased_records.street_num is not null
+            and purchased_records.street_num = match_targets.street_num) as street_match,
+        (purchased_records.phone10 = match_targets.phone10) as phone_match,
+        (purchased_records.domain = match_targets.domain)   as domain_match
+    from candidates
+    inner join purchased_records
+        on purchased_records.record_key = candidates.record_key
+    inner join match_targets
+        on match_targets.target_id = candidates.target_id
+        and match_targets.target_kind = candidates.target_kind
 )
 
 select
@@ -125,4 +126,4 @@ select
              and coalesce(street_match, false)
             then 'duplicate'
     end as match_class
-from scored
+from pairs

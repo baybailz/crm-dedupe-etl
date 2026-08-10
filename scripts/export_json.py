@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-"""Export pipeline results to docs/data/*.json for the GitHub Pages console.
+"""Write docs/data/*.json for the web console. Run after dbt build.
 
-Run after `dbt build`. Reads the DuckDB file the demo target produces, plus
-the loader state and the incoming/ directory, and writes:
-
-    summary.json               KPIs, file queue, next file name, timestamp
-    company.json               select * from company_post_import (final table)
-    record_status.json         every vendor record + disposition
-    potential_duplicates.json  the pair-level duplicate report
-    next_file.json             raw preview of the next pending file
-    logs.json                  captured stdout of the load + dbt steps, plus
-                               a run history the console renders as a log
-                               (--python-log / --dbt-log / --action)
+    summary.json               counts, file queue, next file
+    company.json               dim_company
+    record_status.json         one verdict per purchased record
+    potential_duplicates.json  one row per suspect pair
+    next_file.json             preview of the next pending file
+    avoided.json               the naive union, what importing blind would give
+    logs.json                  run history the console renders as a log
+    models.json                project source for the code browser
+    model_data.json            row samples behind the play button
 """
 
 import argparse
@@ -28,6 +26,38 @@ DB = ROOT / "crm_dedupe.duckdb"
 STATE_FILE = ROOT / "state" / "loaded_files.json"
 INCOMING = ROOT / "incoming"
 HISTORY_LIMIT = 12
+
+
+AVOIDED_SQL = """
+select * from (
+    select
+        stg_company.company_name,
+        stg_company.address,
+        stg_company.city,
+        stg_company.state,
+        stg_company.zip,
+        stg_company.phone_number,
+        'crm_company'            as source,
+        stg_company.name_match   as cluster_key
+    from main.stg_company
+
+    union all
+
+    select
+        stg_purchased_company.company_name,
+        stg_purchased_company.address_1,
+        stg_purchased_company.city,
+        stg_purchased_company.state,
+        stg_purchased_company.zip,
+        stg_purchased_company.primary_phone_number,
+        stg_purchased_company.source_file || '.csv' as source,
+        stg_purchased_company.name_match
+    from main.stg_purchased_company
+) as unioned
+order by cluster_key,
+         case when source = 'crm_company' then 0 else 1 end,
+         source
+"""
 
 
 def rows_of(con, sql: str) -> list[dict]:
@@ -61,6 +91,14 @@ def main() -> None:
     dupes = rows_of(con, """
         select * from main.dim_company_duplicates order by record_key
     """)
+
+    # What a naive import would have produced, against whatever is loaded now.
+    avoided = rows_of(con, AVOIDED_SQL)
+    seen: dict[str, int] = {}
+    for r in avoided:
+        seen[r["cluster_key"]] = seen.get(r["cluster_key"], 0) + 1
+    for r in avoided:
+        r["in_cluster"] = seen[r["cluster_key"]] > 1
 
     con.close()
 
@@ -102,10 +140,10 @@ def main() -> None:
             passed = int(token.split("=")[1])
 
     relations = [
-        "crm_company", "vendor_records", "company_name_aliases",
+        "crm_company", "purchased_company", "company_name_aliases",
         "stg_company", "stg_purchased_company", "trn_scored_pairs",
         "dim_company_duplicates", "dim_record_status",
-        "dim_company_purchased", "dim_company",
+        "dim_purchased_company", "dim_company",
     ]
     with duckdb.connect(str(DB), read_only=True) as con2:
         model_data = {rel: rows_of(con2, f"select * from main.{rel} order by all limit 120")
@@ -143,14 +181,13 @@ def main() -> None:
     # The dbt project source, for the presentation's model browser —
     # published from the repo itself so the deck can never drift from the code.
     model_files = [
-        "scripts/stage_for_dbt.py",
-        "scripts/load_to_stage.py",
+        "scripts/load_purchased.py",
         ".github/workflows/pipeline.yml",
         "dbt_project.yml",
         "seeds/schema.yml",
         "profiles.yml",
         "seeds/crm_company.csv",
-        "seeds/vendor_records.csv",
+        "seeds/purchased_company.csv",
         "seeds/company_name_aliases.csv",
         "macros/normalize.sql",
         "models/staging/schema.yml",
@@ -161,14 +198,35 @@ def main() -> None:
         "models/conformed/schema.yml",
         "models/conformed/dim_company_duplicates.sql",
         "models/conformed/dim_record_status.sql",
-        "models/conformed/dim_company_purchased.sql",
+        "models/conformed/dim_purchased_company.sql",
         "models/conformed/dim_company.sql",
         "tests/schema.yml",
         "tests/assert_match_keys_present.sql",
+        "tests/assert_unique_candidate_pairs.sql",
     ]
-    models = {"files": [
-        {"path": p, "sql": (ROOT / p).read_text()} for p in model_files
-    ]}
+    # The project before this request, for the presentation's V1/V2 toggle.
+    # Left value is where the file sits in the project; right is what to read.
+    v1_files = [
+        ("dbt_project.yml", "baseline/dbt_project.yml"),
+        ("profiles.yml", "profiles.yml"),
+        ("macros/normalize.sql", "baseline/macros/normalize.sql"),
+        ("seeds/schema.yml", "baseline/seeds/schema.yml"),
+        ("seeds/crm_company.csv", "seeds/crm_company.csv"),
+        ("models/staging/schema.yml", "baseline/models/staging/schema.yml"),
+        ("models/staging/stg_company.sql", "baseline/models/staging/stg_company.sql"),
+        ("models/conformed/schema.yml", "baseline/models/conformed/schema.yml"),
+        ("models/conformed/dim_company.sql", "baseline/models/conformed/dim_company.sql"),
+    ]
+    # trn_scored_pairs is the only templated model, so publish what its Jinja
+    # actually compiles to. dbt writes this during the build that just ran.
+    templated = "models/transform/trn_scored_pairs.sql"
+    built = ROOT / "target" / "compiled" / "crm_dedupe" / templated
+    models = {
+        "files": [{"path": p, "sql": (ROOT / p).read_text()} for p in model_files],
+        "v1": [{"path": shown, "sql": (ROOT / src).read_text()}
+               for shown, src in v1_files],
+        "compiled": {templated: built.read_text()} if built.exists() else {},
+    }
 
     for name, payload in [
         ("summary.json", summary),
@@ -176,6 +234,8 @@ def main() -> None:
         ("record_status.json", record_status),
         ("potential_duplicates.json", dupes),
         ("next_file.json", {"name": next_file, "rows": next_rows}),
+        ("avoided.json", {"rows": avoided,
+                          "duplicated": sum(1 for r in avoided if r["in_cluster"])}),
         ("logs.json", logs),
         ("models.json", models),
         ("model_data.json", model_data),

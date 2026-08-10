@@ -1,0 +1,8 @@
+# Project config: where seeds, models, and macros live.
+name: crm_dedupe
+version: "1.0.0"
+profile: crm_dedupe
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]

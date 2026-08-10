@@ -1,0 +1,9 @@
+# Staging contracts.
+version: 2
+
+models:
+  - name: stg_company
+    description: Master company data from the CRM.
+    columns:
+      - name: company_id
+        tests: [unique, not_null]

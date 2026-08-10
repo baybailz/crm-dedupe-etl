@@ -15,13 +15,14 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values:
-                - new
-                - duplicate_of_crm
-                - duplicate_within_file
-                - duplicate_cross_file
+              arguments:
+                values:
+                  - new
+                  - duplicate_of_crm
+                  - duplicate_within_file
+                  - duplicate_cross_file
 
-  - name: dim_company_purchased
+  - name: dim_purchased_company
     description: Purchased companies imported into the company dimension.
     columns:
       - name: company_id

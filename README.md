@@ -1,7 +1,9 @@
-# Import vendor lists. Create zero duplicates.
+# Import company lists. Create zero duplicates.
 
-Sales bought company lists. Import them into the CRM without
-duplicating what is already there, and record what happened to every row.
+The database already has companies in it. Sales bought company lists where one company
+arrives as `7-Eleven`, `711`, and `7-Eleven, Inc.`, with the address written three
+different ways. This pipeline works out which rows are already there, imports the
+ones that are not, and records what happened to every row.
 
 **[Live demo →](https://baybailz.github.io/crm-dedupe-etl/)** — a presentation
 and a working console. The Load button dispatches a GitHub Actions workflow
@@ -13,7 +15,7 @@ that runs the real pipeline and publishes the result back to the page.
 
 The CRM has **7-Eleven · 218 Peachtree Street NW**. The lists deliver this:
 
-| Vendor row | Verdict |
+| Purchased row | Verdict |
 |---|---|
 | `7-Eleven · 218 Peachtree Street Northwest` | duplicate |
 | `711 · 218 Peachtree St NW` | duplicate |
@@ -31,27 +33,29 @@ becomes five.
    digits and website to domain. Both sides run through the same macros.
 2. **Block** — candidate pairs come from four equality passes: zip, city+state,
    phone, domain. Each is one clean hash join; adding a key adds recall.
-3. **Score** — Jaro-Winkler on name and address (native to Snowflake and
-   DuckDB), plus exact signals: phone, domain, street number.
+3. **Score** — Jaro-Winkler on name and address, plus exact signals:
+   phone, domain, street number.
 4. **Classify** — duplicate or nothing. Identity is name **and** address, so
    the same name at a different street number is a new location.
 
 Master data always wins: an import adds rows, it never edits one.
 `dim_company` is incremental on `company_id`, so a repeated run upserts rather
-than duplicating (a `MERGE` on Snowflake, delete+insert on DuckDB).
+than duplicating.
 
 ![dbt lineage](docs/img/lineage.png)
 
 ## Layout
 
 ```
-incoming/          vendor CSVs waiting to be loaded
-scripts/           stage_for_dbt.py (demo) · load_to_stage.py (Snowflake)
-seeds/             master data, aliases, generated vendor seed
+incoming/          company CSVs waiting to be loaded
+scripts/           load_purchased.py, the ingest step
+seeds/             master data, aliases, generated purchased seed
 models/staging/    normalize both sides into match keys
 models/transform/  block, score, classify candidate pairs
-models/conformed/  dim_company · dim_company_duplicates · dim_record_status
-tests/             singular test: match keys are never blank
+models/conformed/  dim_company · dim_purchased_company
+                   dim_company_duplicates · dim_record_status
+tests/             match keys are never blank · candidate pairs are unique
+baseline/          the project as it stood before this change, for the V1 view
 docs/              the presentation and console, published by Pages
 ```
 
@@ -64,29 +68,20 @@ Locally, free, about two minutes:
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python scripts/stage_for_dbt.py            # stage the next file
+.venv/bin/python scripts/load_purchased.py           # stage the next file
 .venv/bin/dbt build --select tag:master_data         # models + tests
 ```
 
 Repeat to load the remaining files one at a time; `--action reset` starts over.
 Those are the same commands the GitHub Actions workflow runs.
 
-On Snowflake, same models, no SQL changes:
-
-```bash
-pip install dbt-snowflake snowflake-connector-python
-export SNOWFLAKE_ACCOUNT=... SNOWFLAKE_USER=... SNOWFLAKE_PASSWORD=...
-python scripts/load_to_stage.py incoming/list_a.csv
-dbt build --select tag:master_data --target snowflake
-```
-
 ## Deliverables
 
 | Model | What it answers |
 |---|---|
-| `dim_company_duplicates` | which rows are suspect, what they matched, and the scores behind it |
-| `dim_record_status` | one verdict per vendor record: `new`, or which kind of duplicate |
-| `dim_company_purchased` | the clean insert set, mapped to the CRM schema |
+| `dim_company_duplicates` | one row per suspect **pair**: what it matched and the scores behind it |
+| `dim_record_status` | one row per purchased **record**: `new`, or which kind of duplicate |
+| `dim_purchased_company` | the clean insert set, mapped to the CRM schema |
 | `dim_company` | the company dimension: master plus imported rows |
 
 ![The code, model by model](docs/img/code.png)

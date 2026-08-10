@@ -56,7 +56,7 @@
    "primary_contact": "Priya Patel"
   }
  ],
- "vendor_records": [],
+ "purchased_company": [],
  "company_name_aliases": [
   {
    "alias": "7-11",
@@ -181,7 +181,7 @@
  "trn_scored_pairs": [],
  "dim_company_duplicates": [],
  "dim_record_status": [],
- "dim_company_purchased": [],
+ "dim_purchased_company": [],
  "dim_company": [
   {
    "company_id": 1,

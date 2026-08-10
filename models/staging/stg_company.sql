@@ -1,9 +1,6 @@
--- Staging view over the existing CRM company table.
--- Keeps every raw column and adds the normalized match keys the matching
--- layer compares on: name, address, city/state, zip5, 10-digit phone,
--- website domain, street number. Brand aliases come from
--- seeds/company_name_aliases.csv: stewards write natural names
--- (711 -> 7-Eleven); the normalization happens here, not in the seed.
+-- Master data with the normalized match keys the matching layer compares on.
+-- Brand aliases come from seeds/company_name_aliases.csv: stewards write
+-- natural names (711 -> 7-Eleven), the normalizing happens here.
 {{ config(materialized='view', tags=['master_data']) }}
 
 with src as (

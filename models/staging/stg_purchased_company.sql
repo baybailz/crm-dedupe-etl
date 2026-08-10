@@ -1,11 +1,11 @@
--- Staging view over every vendor record loaded so far.
--- Each row gets a stable record_key (source file + line number) plus the
--- same normalized match keys as the CRM side, so the two sides compare
--- like-for-like.
+-- Purchased records with the same match keys as the master side, so the two
+-- compare like-for-like. record_key is source file + line number.
 {{ config(materialized='view', tags=['master_data']) }}
 
 with src as (
-    select * from {{ ref('vendor_records') }}
+    -- The loader rewrites this seed from whatever files are loaded, then
+    -- dbt seed lands it. See scripts/load_purchased.py.
+    select * from {{ ref('purchased_company') }}
 ),
 
 normalized as (

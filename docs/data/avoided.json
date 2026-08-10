@@ -1,0 +1,60 @@
+{
+ "rows": [
+  {
+   "company_name": "7-Eleven",
+   "address": "218 Peachtree Street NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30303",
+   "phone_number": "(404) 555-0100",
+   "source": "crm_company",
+   "cluster_key": "7 eleven",
+   "in_cluster": false
+  },
+  {
+   "company_name": "Chick-fil-A",
+   "address": "5200 Buffington Road",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30349",
+   "phone_number": "(404) 765-8000",
+   "source": "crm_company",
+   "cluster_key": "chick fil a",
+   "in_cluster": false
+  },
+  {
+   "company_name": "Coca-Cola",
+   "address": "1 Coca-Cola Plaza NW",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30313",
+   "phone_number": "(404) 676-2121",
+   "source": "crm_company",
+   "cluster_key": "coca cola",
+   "in_cluster": false
+  },
+  {
+   "company_name": "Delta Air Lines",
+   "address": "1030 Delta Boulevard",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30354",
+   "phone_number": "(404) 715-2600",
+   "source": "crm_company",
+   "cluster_key": "delta air lines",
+   "in_cluster": false
+  },
+  {
+   "company_name": "Home Depot",
+   "address": "2455 Paces Ferry Road SE",
+   "city": "Atlanta",
+   "state": "GA",
+   "zip": "30339",
+   "phone_number": "770-433-8211",
+   "source": "crm_company",
+   "cluster_key": "home depot",
+   "in_cluster": false
+  }
+ ],
+ "duplicated": 0
+}

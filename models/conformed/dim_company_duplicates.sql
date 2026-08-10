@@ -1,6 +1,6 @@
--- Deliverable 1: the duplicate report for the sales team.
--- One row per suspect pair: what it matched, where, and the similarity
--- scores behind the call.
+-- Deliverable 1: the duplicate report, one row per suspect pair.
+-- A row colliding with master data and three earlier purchased rows appears
+-- four times here. dim_record_status is the record-grained view.
 {{ config(materialized='table', tags=['master_data']) }}
 
 select
@@ -11,11 +11,6 @@ select
     city,
     state,
     zip,
-    case matched_side
-        when 'crm' then 'existing CRM company'
-        when 'within_file' then 'earlier record in same file'
-        when 'cross_file' then 'record in other file'
-    end                     as duplicate_of,
     matched_id,
     matched_name,
     matched_address,

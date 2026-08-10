@@ -1,7 +1,6 @@
 -- The company dimension: master rows plus imported purchased rows.
--- Incremental on company_id, so each run upserts rather than rebuilds.
--- On Snowflake dbt compiles this to a MERGE; on DuckDB, delete+insert.
--- A reset passes --full-refresh to drop and rebuild from scratch.
+-- Incremental on company_id, so a repeated run upserts instead of duplicating.
+-- A reset passes --full-refresh to rebuild from scratch.
 {{ config(
     materialized='incremental',
     unique_key='company_id',
@@ -22,4 +21,4 @@ select
     phone_number, website, primary_contact,
     source_file || '.csv'   as source,
     source_record_key
-from {{ ref('dim_company_purchased') }}
+from {{ ref('dim_purchased_company') }}

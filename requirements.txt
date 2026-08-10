@@ -1,7 +1,4 @@
 # Local zero-cost demo (DuckDB engine under dbt)
 dbt-core>=1.8
 dbt-duckdb>=1.8
-
-# Uncomment to run against Snowflake
-# dbt-snowflake>=1.8
-# snowflake-connector-python>=3.0
+duckdb>=1.0
