@@ -1,5 +1,6 @@
--- A match key must never be blank: a blank key silently kills matching
--- and everything looks "new". Returns offending rows; any row fails the build.
+-- Guards: matching itself. A blank match key scores 0.0 against everything,
+-- so the record matches nothing and imports as new. Nothing errors.
+-- Any row returned fails the build.
 
 select record_key as offender from {{ ref('stg_purchased_company') }}
 where coalesce(name_match, '') = ''

@@ -10,3 +10,11 @@ data_tests:
       new: a silent duplicate in master data.
     config:
       tags: ['master_data']
+
+  - name: assert_unique_candidate_pairs
+    description: >
+      Fails the build if a candidate pair is produced twice. Adding a
+      blocking pass with union all instead of union would double every
+      score and inflate the duplicate report.
+    config:
+      tags: ['master_data']

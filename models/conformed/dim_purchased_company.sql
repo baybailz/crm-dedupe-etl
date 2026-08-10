@@ -1,6 +1,5 @@
 -- Deliverable 3: the clean insert set, mapped to the CRM schema.
--- Only status = 'new' records. Survivorship: the earliest record in a
--- duplicate cluster wins. New company_ids continue the CRM sequence.
+-- Only status = 'new'. New company_ids continue the CRM sequence.
 {{ config(materialized='table', tags=['master_data']) }}
 
 with new_records as (

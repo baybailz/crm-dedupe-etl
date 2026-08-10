@@ -1,20 +1,12 @@
 {#
-  Shared normalization macros. Both sides of every comparison run through
-  these, so master and purchased data are cleaned the same way.
-    normalize_company_name   lowercase, strip punctuation + legal suffixes
-    normalize_address        USPS abbreviations: Street->st, Northwest->nw
-    digits_only, url_domain, street_number   phone, domain, house number
-    similarity               Jaro-Winkler, 0..1 on DuckDB and Snowflake
-  replace_all exists because DuckDB replaces only the FIRST match unless
-  the 'g' option is passed; Snowflake's regexp_replace is global already.
+  Both sides of every comparison run through these, so master and purchased
+  data get cleaned the same way.
+  replace_all forces the 'g' flag: without it DuckDB replaces only the first
+  match and silently truncates the value.
 #}
 
 {% macro replace_all(expr, pattern, replacement) -%}
-  {%- if target.type == 'snowflake' -%}
-    regexp_replace({{ expr }}, '{{ pattern }}', '{{ replacement }}')
-  {%- else -%}
-    regexp_replace({{ expr }}, '{{ pattern }}', '{{ replacement }}', 'g')
-  {%- endif -%}
+  regexp_replace({{ expr }}, '{{ pattern }}', '{{ replacement }}', 'g')
 {%- endmacro %}
 
 {% macro normalize_company_name(col) -%}
@@ -62,17 +54,9 @@
 {%- endmacro %}
 
 {% macro street_number(col) -%}
-  {% if target.type == 'snowflake' -%}
-    regexp_substr({{ col }}, '^[0-9]+')
-  {%- else -%}
-    nullif(regexp_extract({{ col }}, '^[0-9]+'), '')
-  {%- endif %}
+  nullif(regexp_extract({{ col }}, '^[0-9]+'), '')
 {%- endmacro %}
 
 {% macro similarity(a, b) -%}
-  {% if target.type == 'snowflake' -%}
-    jarowinkler_similarity({{ a }}, {{ b }}) / 100.0
-  {%- else -%}
-    jaro_winkler_similarity({{ a }}, {{ b }})
-  {%- endif %}
+  jaro_winkler_similarity({{ a }}, {{ b }})
 {%- endmacro %}

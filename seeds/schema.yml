@@ -11,8 +11,8 @@ seeds:
         zip: varchar(10)
         phone_number: varchar(20)
 
-  - name: vendor_records
-    description: Purchased vendor rows staged by stage_for_dbt.py.
+  - name: purchased_company
+    description: Purchased company rows staged by load_purchased.py.
     config:
       tags: ['master_data']
       column_types:

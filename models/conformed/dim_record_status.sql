@@ -1,8 +1,6 @@
--- Deliverable 2: every vendor record with its verdict.
--- Spine is staging, not the transform: a record with zero candidate
--- pairs never appears in trn_scored_pairs but still needs a verdict.
--- Best match wins by priority: CRM duplicate, then file duplicate,
--- else new. Master rows are never modified.
+-- Deliverable 2: one verdict per purchased record.
+-- Spine is staging, not the transform: a record with no candidate pairs still
+-- needs a verdict. Best match wins by priority: master, then file, else new.
 {{ config(materialized='table', tags=['master_data']) }}
 
 with best_match as (

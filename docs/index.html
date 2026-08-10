@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Import vendor lists, create zero duplicates. A live dedupe pipeline: Python, dbt, DuckDB/Snowflake, GitHub Actions.">
+<meta name="description" content="Import company lists, create zero duplicates. A live dedupe pipeline: Python, dbt, DuckDB, GitHub Actions.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Company Data Pipeline">
-<meta property="og:title" content="Import vendor lists. Create zero duplicates.">
+<meta property="og:title" content="Import company lists. Create zero duplicates.">
 <meta property="og:description" content="A live dedupe pipeline you can run from the page: Python stages a file, dbt blocks and scores every candidate pair, GitHub Actions publishes the result.">
 <meta property="og:url" content="https://baybailz.github.io/crm-dedupe-etl/">
 <meta property="og:image" content="https://baybailz.github.io/crm-dedupe-etl/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Import vendor lists. Create zero duplicates. python, dbt, duckdb/snowflake, github actions, jaro-winkler.">
+<meta property="og:image:alt" content="Import company lists. Create zero duplicates. python, dbt, duckdb, github actions, jaro-winkler.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Import vendor lists. Create zero duplicates.">
-<meta name="twitter:description" content="A live dedupe pipeline you can run from the page: Python, dbt, DuckDB/Snowflake, GitHub Actions.">
+<meta name="twitter:title" content="Import company lists. Create zero duplicates.">
+<meta name="twitter:description" content="A live dedupe pipeline you can run from the page: Python, dbt, DuckDB, GitHub Actions.">
 <meta name="twitter:image" content="https://baybailz.github.io/crm-dedupe-etl/og.png">
 <title>Company Data Pipeline</title>
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%23016698"/><path d="M36 10 18 36h11l-3 18 20-28H34l2-16z" fill="white"/></svg>'>
@@ -115,6 +115,9 @@
   .slide h2{font-size:clamp(22px,3vw,32px);font-weight:770;letter-spacing:-.028em;
     margin:0 0 8px;line-height:1.15}
   .slide .lead{color:var(--ink2);font-size:clamp(14px,1.5vw,16.5px);max-width:820px;margin:0 0 22px}
+  .slide .lead a{color:var(--accent);font-weight:650;text-decoration:none;
+    border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .slide .lead a:hover{border-bottom-color:var(--accent)}
   .cols{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:26px;align-items:start}
   @media (max-width:880px){.cols{grid-template-columns:1fr}}
   .pointlist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:13px}
@@ -169,7 +172,7 @@
   .ide .code{flex:1;min-width:0;border:0;border-left:1px solid var(--code-border);
     border-radius:0;box-shadow:none}
   .ide .codebody{font-size:11.9px;max-height:540px}
-  .fx{width:262px;flex:none;background:#090d15;display:flex;flex-direction:column}
+  .fx{width:290px;flex:none;background:#090d15;display:flex;flex-direction:column}
   .fxhead{padding:11px 16px 7px;font-size:9.5px;font-weight:800;letter-spacing:.14em;
     color:#4d5a72;font-family:"Inter",sans-serif}
   .fxrepo{padding:0 16px 8px;font-size:11.5px;font-weight:700;color:#8b96ac;
@@ -177,7 +180,11 @@
   .fxbody{overflow:auto;padding:0 8px 12px}
   .fxrow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;
     background:none;font-family:"JetBrains Mono",monospace;font-size:12px;color:#8b96ac;
-    padding:4.5px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .12s}
+    padding:4.5px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .12s;
+    position:relative;overflow:hidden}
+  .fxrow.added{padding-right:34px}
+  /* long names must yield to the + badge, not run underneath it */
+  .fname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .fxrow:hover{background:#121926;color:#c7d0e0}
   .fxrow.dir{color:#5f6c85;cursor:default;font-weight:600;background:none}
   .fxrow.on{background:rgba(1,102,152,.26);color:#e9eef7;box-shadow:inset 2.5px 0 0 var(--accent)}
@@ -190,6 +197,7 @@
   .idemax{width:24px;height:24px;flex:none;
     display:grid;place-items:center;background:transparent;border:1px solid #2a3346;
     border-radius:6px;color:#8b96ac;cursor:pointer;padding:0;transition:all .15s}
+  .idemax.on{color:var(--accent);background:var(--accent-soft)}
   .idemax:hover{color:#e6ebf5;border-color:var(--accent)}
   .idemax svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;
     stroke-linecap:round;stroke-linejoin:round;display:block}
@@ -220,6 +228,10 @@
   }
 
   /* lineage + diagrams */
+  /* the architecture diagram is short relative to the slide, so centre it
+     in the leftover space instead of letting it hug the lead paragraph */
+  .slide-arch{display:flex;flex-direction:column}
+  .slide-arch .diagram{margin-top:auto;margin-bottom:auto}
   .diagram{overflow-x:auto}
   .diagram svg{min-width:720px;width:100%;height:auto;display:block}
   .hnode{fill:var(--surface2);stroke:var(--border2);stroke-width:1.2}
@@ -348,6 +360,91 @@
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 30%,transparent)}
                    70%{box-shadow:0 0 0 7px color-mix(in srgb,var(--accent) 0%,transparent)}}
 
+  /* version toggle + what-changed markers */
+  .h2row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .h2row h2{margin:0}
+  .vtog{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);
+    border-radius:11px;padding:3px;flex:none}
+  .vbtn{border:0;background:none;color:var(--ink3);font:inherit;font-size:12.5px;font-weight:750;
+    letter-spacing:.04em;padding:6px 15px;border-radius:8px;cursor:pointer;transition:color .15s}
+  .vbtn:hover{color:var(--ink2)}
+  .vbtn.on{background:var(--accent);color:var(--on-accent);box-shadow:0 2px 8px var(--ring)}
+  .newdot{position:absolute;right:7px;top:50%;transform:translateY(-50%);
+    display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;
+    border-radius:5px;background:var(--accent-soft);color:var(--accent);
+    font-size:10px;font-weight:800;line-height:1;flex:none}
+  .newdot.inline{position:static;transform:none;display:inline-flex;
+    vertical-align:middle;margin:0 1px 0 4px;position:relative;top:-1px}
+  .fxrow.added{color:var(--ink)}
+  .dagnode.added{stroke:var(--accent);stroke-width:1.6;stroke-dasharray:5 3}
+  .sw.addsw{background:transparent;border:1.6px dashed var(--accent)}
+
+  /* use of AI slide */
+  .aigrid{margin-top:20px;display:grid;overflow:hidden;
+    grid-template-columns:minmax(0,.58fr) minmax(0,1fr) minmax(0,1.08fr);
+    border:1px solid var(--border);border-radius:14px}
+  .aihcell,.aihead{background:var(--surface2);border-bottom:1px solid var(--border)}
+  .aihead{padding:11px 16px}
+  .aihead b{display:block;font-size:13px;font-weight:800;letter-spacing:.01em}
+  .aihead span{display:block;font-size:11px;color:var(--ink3);margin-top:1px}
+  .aihead.l{color:var(--ink3)}
+  .aihead.r{color:var(--accent);background:var(--accent-soft)}
+  .aik{display:flex;align-items:center;padding:11px 16px;font-size:11.5px;font-weight:750;
+    color:var(--ink2);background:var(--surface2);border-top:1px solid var(--border)}
+  .aicell{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:start;
+    padding:11px 16px;font-size:12.6px;line-height:1.5;border-top:1px solid var(--border)}
+  .aicell .mk{font-size:11.5px;font-weight:800;line-height:1.55}
+  .aicell .tx{min-width:0}
+  .aicell.l{color:var(--ink3);background:var(--surface2)}
+  .aicell.l .mk{color:var(--bad)}
+  .aicell.r{color:var(--ink);background:var(--accent-soft)}
+  .aicell.r .mk{color:var(--good)}
+  .aigrid .mono{font-size:.87em}
+  @media (max-width:760px){
+    .aigrid{grid-template-columns:1fr}
+    .aihcell,.aihead{display:none}
+    .aik{border-top:1px solid var(--border);padding:10px 14px 6px;font-size:10.5px;
+      font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3)}
+    .aicell{border-top:0;padding:3px 14px 4px}
+    .aicell.r{padding-bottom:12px}
+  }
+
+  /* vertical diagram flow (narrow viewports) */
+  .vflow{display:flex;flex-direction:column;align-items:stretch;gap:0}
+  .vlayer,.vgroup{border:1px solid var(--border);border-radius:13px;padding:10px;
+    background:var(--surface2);display:flex;flex-direction:column;gap:7px}
+  .vgroup{border-style:dashed;background:none;padding:12px 10px}
+  .vtag{font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--ink3);padding:1px 2px 2px}
+  .vnode{border:1.5px solid var(--border2);border-radius:10px;padding:9px 12px;
+    background:var(--surface);font-family:"JetBrains Mono",monospace;font-size:12px;
+    font-weight:600;color:var(--ink);word-break:break-word}
+  .vnode b{display:block;font-family:"Inter",sans-serif;font-size:13px;font-weight:750}
+  .vnode span{display:block;font-size:11px;font-weight:400;color:var(--ink3);margin-top:2px;
+    word-break:break-word}
+  .vnode.n-seed{border-color:var(--border2)}
+  .vnode.n-stg{border-color:var(--accent)}
+  .vnode.n-int{border-color:var(--trn-c)}
+  .vnode.n-dim{border-color:var(--accent-deep)}
+  .vnode.n-page,.vnode.n-step{border-color:var(--border2);font-family:"Inter",sans-serif}
+  .vnode.added{border-style:dashed;border-color:var(--accent)}
+  .varrow{align-self:center;display:flex;align-items:center;gap:8px;
+    height:26px;color:var(--ink3);font-size:10.5px}
+  .varrow::before{content:"";width:1.5px;height:100%;
+    background:repeating-linear-gradient(180deg,var(--border2) 0 5px,transparent 5px 9px)}
+  .varrow[data-l]::after{content:attr(data-l)}
+
+  /* file picker replaces the tree on a phone */
+  .fxsel{width:100%;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;
+    color:#c7d0e0;background:#090d15;border:0;border-bottom:1px solid var(--code-border);
+    padding:11px 14px;-webkit-appearance:none;appearance:none;border-radius:0}
+  .fxsel:focus{outline:2px solid var(--accent);outline-offset:-2px}
+
+  .ptsec{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--accent);margin:22px 0 10px;padding-bottom:7px;
+    border-bottom:1px solid var(--border)}
+  .ptsec:first-of-type{margin-top:18px}
+
   .tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);
     border-radius:13px;padding:4px;width:max-content;max-width:100%;overflow-x:auto;margin-bottom:14px}
   .tab{border:0;background:none;color:var(--ink2);font:inherit;font-size:13px;font-weight:650;
@@ -377,6 +474,9 @@
   .chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
   .chip .cnt{opacity:.65;font-weight:550}
   .tablewrap{overflow:auto;max-height:560px}
+  .scrollbox{max-height:440px;overflow:auto;margin-top:8px}
+  .barbtns{flex:none;margin-left:auto}
+  .codetitle{min-width:0;overflow:hidden;text-overflow:ellipsis}
   table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px}
   th{position:sticky;top:0;z-index:2;background:var(--surface);
     font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink3);
@@ -484,6 +584,20 @@
     .cno{width:34px;padding-right:10px}
     .codebody{font-size:11.4px}
     .cols{gap:18px}
+    .tablewrap,.scrollbox{overflow:visible;max-height:none}
+    table,thead,tbody{display:block;width:auto}
+    thead{display:none}
+    tbody tr{display:flex;flex-direction:column;padding:10px 0;
+      border-bottom:1px solid var(--border)}
+    tbody tr:last-child{border-bottom:0}
+    .verdicts td,.tablewrap td,td{display:block;width:auto;border-bottom:0;
+      padding:2px 14px;white-space:normal}
+    td[data-l]::before{content:attr(data-l);display:block;font-size:9.5px;font-weight:800;
+      letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:1px}
+    /* row number reads as noise at the top of a card; send it to the bottom */
+    td[data-l="ID"],td[data-l="#"]{order:9;color:var(--ink3)}
+    td .sub2{margin-top:0}
+    .ide .fxsel{font-size:12.5px}
     .conn{width:2px;height:22px;margin:2px 0 2px 26px;align-self:flex-start;
       background:repeating-linear-gradient(180deg,var(--border2) 0 5px,transparent 5px 10px)}
   }
@@ -560,6 +674,7 @@ const ICO = {
   play:'<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>',
   lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>',
   codegl:'<svg viewBox="0 0 24 24"><path d="m9 8-4 4 4 4M15 8l4 4-4 4"/></svg>',
+  compiled:'<svg viewBox="0 0 24 24"><path d="M7 4v6l-3 4h16l-3-4V4"/><path d="M9 4h6M9 18h6M12 14v4"/></svg>',
   close:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
 };
 const STATUS_META = {
@@ -583,8 +698,18 @@ function toggleIdeFull(){
 }
 let prevSummary=null, prevCompanyIds=null;
 let mode='present', slideIdx=0, slideDir=1;
-let currentTab='incoming', dupeFilter='all', searchCompany='';
+let currentTab='incoming', searchCompany='';
 let running=false, runPhase='idle', runLink=null, runMsg='', histBase=0;
+let projVer='v2';
+const NARROW=matchMedia('(max-width:760px)');
+const isNarrow=()=>NARROW.matches;
+let wasNarrow=isNarrow();
+addEventListener('resize',()=>{
+  const n=isNarrow();
+  if(n===wasNarrow)return;
+  wasNarrow=n;
+  render();
+});
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -652,8 +777,8 @@ async function loadAll(viaApi=false){
   const logs=await fetchJson('logs.json',viaApi).catch(()=>null);
   
   const modelData=await fetchJson('model_data.json',viaApi).catch(()=>null);
-  const pres=await fetchJson('presentation.json',viaApi).catch(()=>null);
-  D={summary,company,log,dupes,next,models,logs,modelData,pres};
+  const avoided=await fetchJson('avoided.json',viaApi).catch(()=>null);
+  D={summary,company,log,dupes,next,models,logs,modelData,avoided};
   render();
 }
 
@@ -698,6 +823,7 @@ function fileTree(files,cur){
     });
   });
   const DIR_ORDER={macros:0,models:1,tests:2,seeds:3,scripts:4,'.github':5,workflows:0,staging:0,transform:1,conformed:2};
+  const v1=v1Paths();
   const render=(node,depth)=>{
     let h='';
     Object.keys(node).filter(k=>k!=='__files')
@@ -709,8 +835,11 @@ function fileTree(files,cur){
     (node.__files||[]).forEach(f=>{
       const nm=f.path.split('/').pop();
       const ext=nm.endsWith('.yml')?'yml':nm.endsWith('.py')?'py':nm.endsWith('.csv')?'csv':'sql';
-      h+=`<button class="fxrow${f.path===cur?' on':''}" data-open="${esc(f.path)}"
-            style="padding-left:${8+depth*14}px"><span class="fico ${ext}"></span>${esc(nm)}</button>`;
+      const isNew=projVer==='v2'&&v1.size&&!v1.has(f.path);
+      h+=`<button class="fxrow${f.path===cur?' on':''}${isNew?' added':''}" data-open="${esc(f.path)}"
+            style="padding-left:${8+depth*14}px"><span class="fico ${ext}"></span><span
+            class="fname">${esc(nm)}</span>${
+            isNew?'<span class="newdot" title="added for this request">+</span>':''}</button>`;
     });
     return h;
   };
@@ -729,30 +858,68 @@ function codePanel(title,sub,code,lang,maxH,barExtra=''){
 const ideMaxBtn=()=>`<button class="idemax" data-idemax
   title="${ideFull?'Exit (Esc)':'Expand'}">${ideFull?ICO.close:ICO.expand}</button>`;
 const ideViewBtn=()=>`<button class="idemax" data-ideview
-  title="${ideView==='code'?'Run · view the data':'Back to the code'}">${ideView==='code'?ICO.play:ICO.codegl}</button>`;
+  title="${ideView==='data'?'Back to the source':'Run · view the data'}">${
+  ideView==='data'?ICO.codegl:ICO.play}</button>`;
+// Only the templated model has a compiled form worth showing.
+const compiledFor=path=>D.models?.compiled?.[path];
+const ideCompiledBtn=()=>`<button class="idemax${ideView==='compiled'?' on':''}" data-idecompiled
+  title="${ideView==='compiled'?'Back to the source':'See what the Jinja compiles to'}">${
+  ideView==='compiled'?ICO.codegl:ICO.compiled}</button>`;
 const fmtCell=v=>v==null?'∅':typeof v==='number'&&!Number.isInteger(v)?v.toFixed(3):String(v);
+function verFiles(){
+  if(projVer==='v1')return D.models.v1||[];
+  return D.models.files.filter(f=>!f.path.startsWith('.github'));
+}
+const v1Paths=()=>new Set((D.models?.v1||[]).map(f=>f.path));
 function codeSlideCtx(){
-  const files=D.models.files.filter(f=>!f.path.startsWith('.github'));
+  const files=verFiles();
   const cur=files.find(f=>f.path===modelPick)||files[0];
   const rel=cur.path.split('/').pop().replace(/\.[a-z]+$/,'');
-  return {files,cur,rel,rows:D.modelData?.[rel]};
+  // V1 is the shape of the project before this change, not a state the
+  // warehouse was ever in, so there is no data to show behind it.
+  return {files,cur,rel,rows:projVer==='v1'?undefined:D.modelData?.[rel]};
+}
+const VER_HOME={v1:'models/staging/stg_company.sql',
+                v2:'models/transform/trn_scored_pairs.sql'};
+function setVer(v){
+  if(projVer===v)return;
+  projVer=v;
+  if(!verFiles().some(f=>f.path===modelPick))modelPick=VER_HOME[v];
+  renderPresent();
+}
+function verToggle(){
+  const b=(v,label)=>`<button class="vbtn${projVer===v?' on':''}" data-ver="${v}">${label}</button>`;
+  return `<div class="vtog">${b('v1','V1')}${b('v2','V2')}</div>`;
+}
+function wireVerToggle(){
+  document.querySelectorAll('[data-ver]').forEach(b=>b.onclick=()=>setVer(b.dataset.ver));
 }
 function idePaneHtml({cur,rel,rows}){
   const lang=p=>p.endsWith('.yml')?'yml':p.endsWith('.py')?'py':p.endsWith('.csv')?'csv':'sql';
-  const btns=`<span class="barbtns">${Array.isArray(rows)?ideViewBtn():''}${ideMaxBtn()}</span>`;
+  const built=compiledFor(cur.path);
+  const btns=`<span class="barbtns">${Array.isArray(rows)?ideViewBtn():''}${
+    built?ideCompiledBtn():''}${ideMaxBtn()}</span>`;
+  if(ideView==='compiled'&&built){
+    return codePanel(cur.path,`compiled · ${built.split('\n').length} lines`,
+      built,'sql',0,btns);
+  }
   if(ideView==='data'&&Array.isArray(rows)){
     return `<div class="code"><div class="codebar">
           <span class="codetitle">${esc(rel)}<span class="dim">${rows.length} rows · last run</span></span>
         ${btns}</div>
       <div class="codebody" style="padding:15px 18px">${dataBody(rows)}</div></div>`;
   }
-  return codePanel(cur.path,`${cur.sql.split('\n').length} lines`,
+  const title=isNarrow()?cur.path.split('/').pop():cur.path;
+  return codePanel(title,`${cur.sql.split('\n').length} lines`,
     cur.sql,lang(cur.path),0,btns);
 }
 function wireIdeButtons(){
   document.querySelectorAll('[data-idemax]').forEach(b=>b.onclick=toggleIdeFull);
   document.querySelectorAll('[data-ideview]').forEach(b=>b.onclick=()=>{
-    ideView=ideView==='code'?'data':'code';swapIdePane();
+    ideView=ideView==='data'?'code':'data';swapIdePane();
+  });
+  document.querySelectorAll('[data-idecompiled]').forEach(b=>b.onclick=()=>{
+    ideView=ideView==='compiled'?'code':'compiled';swapIdePane();
   });
 }
 function swapIdePane(){
@@ -783,7 +950,7 @@ function svgArch(){
       <rect class="hnode" x="802" y="118" width="170" height="94" rx="14"/>
       <text class="htext" x="887" y="150" text-anchor="middle">Repository</text>
       <text class="hsub" x="887" y="170" text-anchor="middle">docs/data/*.json</text>
-      <text class="hsub" x="887" y="186" text-anchor="middle">state · vendor seed</text>
+      <text class="hsub" x="887" y="186" text-anchor="middle">state · company seed</text>
       <path class="hline flowing" d="M198 165 H270"/>
       <text class="hlabel" x="237" y="153" text-anchor="middle">dispatch</text>
       <path class="hline flowing" d="M724 165 H796"/>
@@ -795,7 +962,7 @@ function svgArch(){
     <text class="hlabel" x="276" y="100">Data pipeline via GitHub Actions</text>
     <rect class="hnode" x="276" y="127" width="132" height="76" rx="12"/>
     <text class="htext" x="342" y="157" text-anchor="middle">Stage data</text>
-    <text class="hsub" x="342" y="178" text-anchor="middle">stage_for_dbt.py</text>
+    <text class="hsub" x="342" y="178" text-anchor="middle">load_purchased.py</text>
     <rect class="hnode hot" x="425" y="127" width="150" height="76" rx="12"/>
     <text class="htext" x="500" y="153" text-anchor="middle">Transform data</text>
     <text class="hsub" x="500" y="173" text-anchor="middle">dbt build --select</text>
@@ -826,9 +993,67 @@ function archZoomToggle(){
   };
   requestAnimationFrame(step);
 }
-function svgDag(){
+function svgDagV1(){
   const node=(cls,x,y,label,tag)=>`
     <rect class="dagnode ${cls}" x="${x}" y="${y}" width="196" height="46" rx="10"/>
+    <text class="dagtag" x="${x+184}" y="${y+16}" text-anchor="end">${tag}</text>
+    <text class="dagtext" x="${x+14}" y="${y+32}">${label}</text>`;
+  return `<svg viewBox="0 0 1060 150" role="img" aria-label="dbt lineage before this change">
+    <defs><marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10z" fill="var(--border2)"/></marker></defs>
+    ${node('n-seed',60,52,'crm_company','SEED')}
+    ${node('n-stg',432,52,'stg_company','STG')}
+    ${node('n-dim',804,52,'dim_company','DIM')}
+    <path class="dagline" d="M256 75 H426"/>
+    <path class="dagline" d="M628 75 H798"/>
+  </svg>`;
+}
+const DAG_ADDED=new Set(['purchased_company','company_name_aliases','stg_purchased_company',
+  'trn_scored_pairs','dim_company_duplicates','dim_record_status','dim_purchased_company']);
+const DAG_V2=[
+  {tag:'raw',cls:'n-seed',nodes:['crm_company','purchased_company','company_name_aliases']},
+  {tag:'staging',cls:'n-stg',nodes:['stg_company','stg_purchased_company']},
+  {tag:'transform',cls:'n-int',nodes:['trn_scored_pairs']},
+  {tag:'conformed',cls:'n-dim',nodes:['dim_company_duplicates','dim_record_status',
+                                      'dim_purchased_company','dim_company']},
+];
+const DAG_V1=[
+  {tag:'raw',cls:'n-seed',nodes:['crm_company']},
+  {tag:'staging',cls:'n-stg',nodes:['stg_company']},
+  {tag:'conformed',cls:'n-dim',nodes:['dim_company']},
+];
+// A wide SVG cannot shrink to a phone without the labels going unreadable,
+// so narrow viewports get the same graph as a vertical flow instead.
+function dagFlow(v1){
+  return `<div class="vflow">${(v1?DAG_V1:DAG_V2).map((L,i)=>`
+    ${i?'<div class="varrow"></div>':''}
+    <div class="vlayer">
+      <div class="vtag">${L.tag}</div>
+      ${L.nodes.map(n=>`<div class="vnode ${L.cls}${
+        !v1&&DAG_ADDED.has(n)?' added':''}">${n}</div>`).join('')}
+    </div>`).join('')}</div>`;
+}
+function archFlow(){
+  const step=(t,sub)=>`<div class="vnode n-step"><b>${t}</b><span>${sub}</span></div>`;
+  return `<div class="vflow">
+    <div class="vnode n-page"><b>This page</b><span>GitHub Pages · static</span></div>
+    <div class="varrow" data-l="dispatch"></div>
+    <div class="vgroup">
+      <div class="vtag">Data pipeline via GitHub Actions</div>
+      ${step('Stage data','load_purchased.py')}
+      <div class="varrow"></div>
+      ${step('Transform data','dbt build --select tag:master_data')}
+      <div class="varrow"></div>
+      ${step('Export data','export_json.py')}
+    </div>
+    <div class="varrow" data-l="commit · poll the run"></div>
+    <div class="vnode n-page"><b>This page</b><span>refreshed from docs/data</span></div>
+  </div>`;
+}
+function svgDag(){
+  const added=DAG_ADDED;
+  const node=(cls,x,y,label,tag)=>`
+    <rect class="dagnode ${cls}${added.has(label)?' added':''}" x="${x}" y="${y}" width="196" height="46" rx="10"/>
     <text class="dagtag" x="${x+184}" y="${y+16}" text-anchor="end">${tag}</text>
     <text class="dagtext" x="${x+14}" y="${y+32}">${label}</text>`;
   const edge=(x1,y1,x2,y2,main)=>`<path class="dagline${main?' main':''}"
@@ -837,14 +1062,14 @@ function svgDag(){
     <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
       <path d="M0 0 10 5 0 10z" fill="var(--border2)"/></marker></defs>
     ${node('n-seed',20,30,'crm_company','SEED')}
-    ${node('n-seed',20,150,'vendor_records','SEED')}
+    ${node('n-seed',20,150,'purchased_company','SEED')}
     ${node('n-seed',20,270,'company_name_aliases','SEED')}
     ${node('n-stg',300,60,'stg_company','STG')}
     ${node('n-stg',300,210,'stg_purchased_company','STG')}
     ${node('n-int',560,60,'trn_scored_pairs','TRN')}
     ${node('n-dim',850,20,'dim_company_duplicates','DIM')}
     ${node('n-dim',850,115,'dim_record_status','DIM')}
-    ${node('n-dim',850,210,'dim_company_purchased','DIM')}
+    ${node('n-dim',850,210,'dim_purchased_company','DIM')}
     ${node('n-dim',850,305,'dim_company','DIM')}
     ${edge(216,53,294,83)}
     ${edge(216,173,294,233)}
@@ -866,60 +1091,75 @@ const SLIDES=[
   {id:'title',kicker:'BI · ETL SCENARIO',render(){
     return `<div class="titleslide">
       <div class="kicker">Scenario walkthrough</div>
-      <h2>Import vendor lists.<br>Create zero duplicates.</h2>
+      <h2>Import company lists.<br>Create zero duplicates.</h2>
       <div class="stackchips">
         <span class="schip hot">python</span><span class="schip hot">dbt</span>
-        <span class="schip">duckdb / snowflake</span><span class="schip">github actions</span>
+        <span class="schip">duckdb</span><span class="schip">github actions</span>
         <span class="schip">jaro-winkler</span>
       </div>
-      <p class="lead">Sales bought company lists. Find the duplicates,
-        import what's new, and record what happened to every row.</p>
+      <p class="lead">The database already has companies in it. Sales bought company lists where one
+        company arrives as 7-Eleven, 711, and 7-Eleven, Inc., with the address written three
+        different ways. This pipeline works out which rows are already there, imports the ones
+        that are not, and records what happened to every row.</p>
       <div class="byline">Bailey Thompson</div>
     </div>`;}},
-  {id:'assumptions',kicker:'STRATEGY & ASSUMPTIONS',render(){
-    return `<h2>Strategy &amp; assumptions</h2>
+  {id:'assumptions',kicker:'ASSUMPTIONS & STRATEGY',render(){
+    const m=t=>`<span class="mono">${t}</span>`;
+    return `<h2>Assumptions &amp; strategy</h2>
+      <div class="ptsec">What I assumed</div>
       <ul class="pointlist">
         <li><span class="pt">1</span><span><b>Master data is the source of truth.</b>
-          <span class="mono">crm_company</span> wins every conflict. An import adds rows;
-          it never edits or deletes one.</span></li>
-        <li><span class="pt">2</span><span><b>Purchased data is low-trust.</b> Expect
-          abbreviations, legal suffixes, missing zips, and duplicates inside the file itself.</span></li>
-        <li><span class="pt">3</span><span><b>Identity is name + address.</b> Not name alone:
-          same name at a different street number is a second location, not a duplicate.</span></li>
-        <li><span class="pt">4</span><span><b>The team already runs dbt.</b> So this is built
-          in dbt, against their warehouse, in their conventions. It is a pull request to an
-          existing project, not a new tool to adopt.</span></li>
-        <li><span class="pt">5</span><span><b>Medallion layering.</b> raw seeds → staging
-          (normalize) → transform (match) → conformed (publish). One job per layer, tested
-          at each step.</span></li>
-        <li><span class="pt">6</span><span><b>Every row gets an outcome.</b> Nothing is
-          dropped silently, and <span class="mono">dim_company</span> is incremental on
-          <span class="mono">company_id</span>, so a repeated run upserts instead of
-          duplicating.</span></li>
-        <li><span class="pt">7</span><span><b>Built to production standards.</b> Contracts sit
-          beside the models they govern, materializations and tags are declared per model,
-          and a steward maintains the alias list in a spreadsheet. Adding a blocking key is
-          one line; adding a source is one staging model.</span></li>
+          ${m('crm_company')} wins every conflict. An import adds rows; it never edits or
+          deletes one.</span></li>
+        <li><span class="pt">2</span><span><b>Purchased data is low-trust.</b> Abbreviations,
+          legal suffixes, missing zips, and duplicates inside the file itself.</span></li>
+        <li><span class="pt">3</span><span><b>Identity is name and address.</b> Not name alone:
+          the same name at a different street number is a second location.</span></li>
+        <li><span class="pt">4</span><span><b>The team already runs dbt.</b> So this is a pull
+          request to their project, in their conventions, not a new tool to adopt.</span></li>
+        <li><span class="pt">5</span><span><b>Seeds stand in for a landing stage.</b> On a CDW the
+          seed becomes a stage, and the loader becomes the copy into it.</span></li>
+      </ul>
+      <div class="ptsec">How I built it</div>
+      <ul class="pointlist">
+        <li><span class="pt">1</span><span><b>Narrow approach for efficiency.</b> I only compare
+          records if they already share attributes. Jaro-Winkler scores name and address from
+          there. No cross joins.</span></li>
+        <li><span class="pt">2</span><span><b>Medallion layering.</b> raw → staging (normalize)
+          → transform (match) → conformed (publish), with tests at every layer.</span></li>
+        <li><span class="pt">3</span><span><b>Re-running is safe.</b> ${m('dim_company')} is
+          incremental on ${m('company_id')}, so loading the same file twice changes
+          nothing.</span></li>
+        <li><span class="pt">4</span><span><b>Built to be maintained.</b> Contracts sit beside
+          the models they govern and settings are declared per model. Adding a blocking key is
+          one line; a steward owns the alias list in a spreadsheet.</span></li>
       </ul>`;}},
   {id:'arch',kicker:'THE ARCHITECTURE',render(){
     return `<h2>The architecture</h2>
       <p class="lead">Load dispatches a GitHub Actions workflow: Python ingest, dbt build,
         results committed back as JSON. A real pipeline, driven from a web page.</p>
       <div class="diagram" style="position:relative">
-        ${svgArch()}
-        <button class="zoombtn" id="archZoomBtn">${archZoom?'&#8854; full picture':'&#8853; zoom to pipeline'}</button>
+        ${isNarrow()?archFlow():svgArch()}
+        ${isNarrow()?'':`<button class="zoombtn" id="archZoomBtn">${
+          archZoom?'&#8854; full picture':'&#8853; zoom to pipeline'}</button>`}
       </div>`;}},
   {id:'lineage',kicker:'DBT LINEAGE',render(){
-    return `<h2>dbt lineage</h2>
-      <p class="lead"><span class="mono">dbt build</span> runs this graph in dependency order,
-        tests included. Staging and transform build as views, conformed as tables, declared
-        per model with <span class="mono">config()</span>. Same models, DuckDB or Snowflake.</p>
-      <div class="diagram" style="margin:38px 0 26px">${svgDag()}</div>
+    const v1=projVer==='v1';
+    return `<div class="h2row"><h2>dbt lineage</h2>${verToggle()}</div>
+      <p class="lead">${v1
+        ? `The project before this request. One staging view over the CRM, one dimension
+           built from it. Nothing here knows about purchased data.`
+        : `Two seeds, one staging model, the whole transform layer, and three dimensions
+           are new. <span class="mono">stg_company</span> and
+           <span class="mono">dim_company</span> already existed and were extended.`}</p>
+      <div class="diagram" style="margin:38px 0 26px">${
+        isNarrow()?dagFlow(v1):(v1?svgDagV1():svgDag())}</div>
       <div class="legend">
         <span><span class="sw seed"></span>raw</span>
         <span><span class="sw stg"></span>staging</span>
-        <span><span class="sw int"></span>transform</span>
+        ${v1?'':'<span><span class="sw int"></span>transform</span>'}
         <span><span class="sw dim"></span>conformed</span>
+        ${v1?'':'<span><span class="sw addsw"></span>added for this request</span>'}
       </div>`;}},
   {id:'code',kicker:'THE CODE',render(){
     if(!D.models||!D.models.files?.length){
@@ -928,15 +1168,25 @@ const SLIDES=[
           (<span class="mono">docs/data/models.json</span>).</p>`;
     }
     const {files,cur}=codeSlideCtx();
-    return `<h2>The code</h2>
+    const v1=projVer==='v1',n1=(D.models.v1||[]).length;
+    return `<div class="h2row"><h2>The code</h2>${verToggle()}</div>
       <p class="lead">${files.length} files,
-        ~${Math.round(files.reduce((a,f)=>a+f.sql.split('\n').length,0)/10)*10} lines.</p>
+        ~${Math.round(files.reduce((a,f)=>a+f.sql.split('\n').length,0)/10)*10} lines.
+        ${v1?'The project before this request.'
+            :`<span class="dim">${files.length-n1} are new, marked
+              <span class="newdot inline">+</span>. Three of those are the deliverables,
+              the rest builds them.</span>`}</p>
       <div class="ide tall${ideFull?' full':''}">
-        <aside class="fx">
-          <div class="fxhead">EXPLORER</div>
-          <div class="fxrepo">crm-dedupe-etl</div>
-          <div class="fxbody">${fileTree(files,cur.path)}</div>
-        </aside>
+        ${isNarrow()
+          ? `<select class="fxsel" id="fxsel" aria-label="Choose a file">${files.map(f=>{
+              const isNew=projVer==='v2'&&v1Paths().size&&!v1Paths().has(f.path);
+              return `<option value="${esc(f.path)}"${f.path===cur.path?' selected':''}>${
+                esc(f.path)}${isNew?'  +':''}</option>`;}).join('')}</select>`
+          : `<aside class="fx">
+               <div class="fxhead">EXPLORER</div>
+               <div class="fxrepo">crm-dedupe-etl</div>
+               <div class="fxbody">${fileTree(files,cur.path)}</div>
+             </aside>`}
         ${idePaneHtml(codeSlideCtx())}
       </div>`;}},
   {id:'table',kicker:'THE RESULT',render(){
@@ -953,16 +1203,15 @@ const SLIDES=[
       </tr>`).join('');
     return `<h2>The result</h2>
       <p class="lead"><span class="mono">select * from dim_company</span></p>
-      <div class="verdicts" style="max-height:440px;overflow:auto;margin-top:8px"><table>
+      <div class="verdicts scrollbox"><table>
         <thead><tr><th>ID</th><th>Company</th><th>Address</th><th>Source</th></tr></thead>
         <tbody>${rows}</tbody></table></div>`;}},
   {id:'avoided',kicker:'WHAT WE AVOIDED',render(){
-    const pres=D.pres;
-    if(!pres) return `<h2>What we avoided</h2>
-      <p class="lead">Snapshot not published yet
-        (<span class="mono">docs/data/presentation.json</span>).</p>`;
-    const dups=pres.rows.filter(r=>r.in_cluster).length;
-    const rows=pres.rows.map(r=>`
+    const av=D.avoided;
+    if(!av) return `<h2>What we avoided</h2>
+      <p class="lead">Not published yet
+        (<span class="mono">docs/data/avoided.json</span>).</p>`;
+    const rows=av.rows.map(r=>`
       <tr${r.in_cluster?' class="rowdup"':''}>
         <td><b>${esc(r.company_name)}</b></td>
         <td>${esc(r.address)}<span class="sub2">${esc(r.city)}, ${esc(r.state)} ${esc(r.zip??'')}</span></td>
@@ -972,10 +1221,51 @@ const SLIDES=[
     return `<h2>What we avoided</h2>
       <p class="lead"><span class="mono">select * from stg_company union all
         select * from stg_purchased_company</span></p>
-      <div class="verdicts" style="max-height:430px;overflow:auto;margin-top:8px"><table>
+      <div class="verdicts scrollbox"><table>
         <thead><tr><th>Company</th><th>Address</th><th>Phone</th><th>Source</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       `;}},
+  {id:'ai',kicker:'USE OF AI',render(){
+    const m=t=>`<span class="mono">${t}</span>`;
+    const row=(k,bad,good)=>`
+      <div class="aik">${k}</div>
+      <div class="aicell l"><span class="mk">✕</span><span class="tx">${bad}</span></div>
+      <div class="aicell r"><span class="mk">✓</span><span class="tx">${good}</span></div>`;
+    return `<h2>Use of AI</h2>
+      <p class="lead">An agent wrote the first
+        <a href="https://github.com/baybailz/crm-dedupe-etl/commit/df690a5d4afdda48ed43839307f2ad39f1f0a41d"
+           target="_blank" rel="noopener">commit</a> from a single prompt. It ran on the first
+        try and every test passed. That is the trap: working and finished are not the same
+        thing. Everything below is what I changed after reading it.</p>
+      <div class="aigrid">
+        <div class="aihcell"></div>
+        <div class="aihead l"><b>One prompt</b><span>nobody reading it</span></div>
+        <div class="aihead r"><b>After I read it</b><span>survives a second engineer</span></div>
+        ${row('Structure',
+          `${m('intermediate/')} and ${m('marts/')}, lifted from a dbt tutorial.`,
+          `${m('staging → transform → conformed')}. The folder tells you what runs when.`)}
+        ${row('Matching',
+          `One ${m('OR')} join, every row against every other. Fine on 26 rows,
+           never returns on a million.`,
+          `Four equality passes, each a hash join. Teaching it a fifth way to match
+           is one line.`)}
+        ${row('Duplicates',
+          `A &ldquo;needs review&rdquo; pile, handed to a person to sort out.`,
+          `It decides. Same name on a different street is a new location, not a duplicate.`)}
+        ${row('Re-runs',
+          `Rebuilt the table every run, and shipped a ${m('MERGE')} script nothing ever called.`,
+          `Incremental on ${m('company_id')}. Load the same file twice and nothing moves.`)}
+        ${row('Coding standards',
+          `${m('from list_recs a join crm b')}. One-letter aliases, join type left to guess.`,
+          `${m('inner join match_targets on purchased_records.zip5 = ...')}. Join type
+           declared, every column traceable to its table.`)}
+        ${row('Model config',
+          `Not one ${m('config()')} across seven models. Everything buried in one project file.`,
+          `Each model declares how it builds. Open the file, see the whole story.`)}
+        ${row('Tests',
+          `Stock tests only. They check the shape of the data, never whether matching worked.`,
+          `The build stops if a match key ever goes blank, because blank matches nothing.`)}
+      </div>`;}},
 ];
 
 /* ================= presentation shell ================= */
@@ -983,7 +1273,7 @@ function renderPresent(){
   const s=SLIDES[slideIdx];
   $('main').innerHTML=`
     <div class="deck">
-      <section class="slide ${slideDir<0?'back':''}" id="slideEl">${s.render()}</section>
+      <section class="slide slide-${s.id} ${slideDir<0?'back':''}" id="slideEl">${s.render()}</section>
       <div class="deckbar">
         <button class="navbtn" id="prevBtn" ${slideIdx===0?'disabled':''}>← Back</button>
         <div class="dots">${SLIDES.map((x,i)=>
@@ -1012,7 +1302,11 @@ function renderPresent(){
   });
   document.querySelector('.fxrow.on')?.scrollIntoView({block:'nearest',inline:'nearest'});
   const zb=$('archZoomBtn'); if(zb)zb.onclick=archZoomToggle;
+  const fs=$('fxsel');
+  if(fs)fs.onchange=()=>{modelPick=fs.value;ideView='code';renderPresent();};
+  wireVerToggle();
   wireIdeButtons();
+  labelCells();
 }
 function gotoSlide(i){
   if(i<0||i>=SLIDES.length)return;
@@ -1130,6 +1424,17 @@ function meter(v){
   const pct=Math.max(0,Math.min(100,Math.round(v*100)));
   return `<span class="meter"><span class="bar"><i style="width:${pct}%"></i></span><span class="v">${Number(v).toFixed(2)}</span></span>`;
 }
+// Cards on a phone need each cell to know its column. Do it once, generically,
+// so every table on the page gets it instead of hand-labelling each renderer.
+function labelCells(){
+  document.querySelectorAll('table').forEach(t=>{
+    const heads=[...t.querySelectorAll('thead th')].map(h=>h.textContent.trim());
+    if(!heads.length)return;
+    t.querySelectorAll('tbody tr').forEach(tr=>{
+      [...tr.children].forEach((td,i)=>{ if(heads[i])td.setAttribute('data-l',heads[i]); });
+    });
+  });
+}
 function tableHTML(headers,rowsHtml){
   return `<div class="tablewrap"><table>
     <thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
@@ -1173,7 +1478,7 @@ function panelIncoming(){
   if(!D.next.name){
     return `<div class="card"><div class="empty">
       <div class="big">✦</div>
-      <b>All vendor files are loaded.</b><br>
+      <b>All company files are loaded.</b><br>
       <span>${fmtN(D.summary.companies_total)} companies in the CRM.</span><br>
       <button class="btn btn-primary" id="resetBtn2">Reset the demo ↺</button>
     </div></div>`;
@@ -1189,7 +1494,7 @@ function panelIncoming(){
     </tr>`).join('');
   return `<div class="card">
     <div class="cardhead"><h2><span class="mono">incoming/${esc(D.next.name)}.csv</span></h2>
-      <span class="hint">raw vendor data, not yet in the CRM</span></div>
+      <span class="hint">raw company data, not yet imported</span></div>
     ${tableHTML(['#','Company','Address','Phone','Website'],rows)}
     <div class="loadbar">
       <button class="btn btn-primary${token()?'':' locked'}" id="loadBtn" ${running?'disabled':''}
@@ -1201,28 +1506,23 @@ function panelIncoming(){
   </div>`;
 }
 function panelDupes(){
-  const counts={all:D.dupes.length,
-    duplicate:D.dupes.filter(d=>d.match_class==='duplicate').length};
-  const chip=(key,label)=>
-    `<button class="chip" data-df="${key}" aria-pressed="${dupeFilter===key}">${label}<span class="cnt">${counts[key]}</span></button>`;
+  const pairs=D.dupes.length;
+  const records=new Set(D.dupes.map(d=>d.record_key)).size;
   const rows=D.dupes
-    .filter(r=>dupeFilter==='all'||r.match_class===dupeFilter)
     .map(r=>`
     <tr>
       <td class="mono faded">${esc(r.record_key)}</td>
       <td><b>${esc(r.company_name)}</b><span class="sub2">${esc(r.address_1??'')}</span></td>
       <td>${esc(r.matched_name)}<span class="sub2">${esc(r.matched_address??'')}</span></td>
-      <td class="faded">${esc(r.duplicate_of)}</td>
       <td>${meter(r.name_similarity)}</td>
       <td>${meter(r.address_similarity)}</td>
       <td><span class="badge b-dup">${ICO.copy}duplicate</span></td>
     </tr>`).join('');
   return `<div class="card">
     <div class="cardhead"><h2 class="mono">dim_company_duplicates</h2>
-      <span class="hint">pair-level report with Jaro-Winkler scores</span></div>
-    ${D.dupes.length?`<div class="chips">${chip('all','All')}${chip('duplicate','Duplicate')}</div>`:''}
-    ${D.dupes.length
-        ?tableHTML(['Record','Vendor record','Matched against','Where','Name sim','Addr sim','Class'],rows)
+      <span class="hint">one row per collision · ${pairs} pairs across ${records} records</span></div>
+    ${pairs
+        ?tableHTML(['Record','Purchased record','Matched against','Name sim','Addr sim','Class'],rows)
         :'<div class="empty"><div class="big">✓</div>No duplicate pairs yet.</div>'}
   </div>`;
 }
@@ -1234,8 +1534,8 @@ function renderPanel(){
   if(lb)lb.onclick=()=>token()?runPipeline('load_next'):denyFlash(lb);
   const rb2=$('resetBtn2');
   if(rb2)rb2.onclick=confirmReset;
-  document.querySelectorAll('[data-df]').forEach(b=>b.onclick=()=>{dupeFilter=b.dataset.df;renderPanel();});
   hookSearch('searchCompanyIn',v=>searchCompany=v);
+  labelCells();
 }
 function renderConsole(){
   $('main').innerHTML=`
