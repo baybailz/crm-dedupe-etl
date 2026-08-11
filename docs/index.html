@@ -379,72 +379,6 @@
   .dagnode.added{stroke:var(--accent);stroke-width:1.6;stroke-dasharray:5 3}
   .sw.addsw{background:transparent;border:1.6px dashed var(--accent)}
 
-  /* use of AI slide */
-  .aigrid{margin-top:20px;display:grid;overflow:hidden;
-    grid-template-columns:minmax(0,.58fr) minmax(0,1fr) minmax(0,1.08fr);
-    border:1px solid var(--border);border-radius:14px}
-  .aihcell,.aihead{background:var(--surface2);border-bottom:1px solid var(--border)}
-  .aihead{padding:11px 16px}
-  .aihead b{display:block;font-size:13px;font-weight:800;letter-spacing:.01em}
-  .aihead span{display:block;font-size:11px;color:var(--ink3);margin-top:1px}
-  .aihead.l{color:var(--ink3)}
-  .aihead.r{color:var(--accent);background:var(--accent-soft)}
-  .aik{display:flex;align-items:center;padding:11px 16px;font-size:11.5px;font-weight:750;
-    color:var(--ink2);background:var(--surface2);border-top:1px solid var(--border)}
-  .aicell{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:start;
-    padding:11px 16px;font-size:12.6px;line-height:1.5;border-top:1px solid var(--border)}
-  .aicell .mk{font-size:11.5px;font-weight:800;line-height:1.55}
-  .aicell .tx{min-width:0}
-  .aicell.l{color:var(--ink3);background:var(--surface2)}
-  .aicell.l .mk{color:var(--bad)}
-  .aicell.r{color:var(--ink);background:var(--accent-soft)}
-  .aicell.r .mk{color:var(--good)}
-  .aigrid .mono{font-size:.87em}
-  @media (max-width:760px){
-    .aigrid{grid-template-columns:1fr}
-    .aihcell,.aihead{display:none}
-    .aik{border-top:1px solid var(--border);padding:10px 14px 6px;font-size:10.5px;
-      font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3)}
-    .aicell{border-top:0;padding:3px 14px 4px}
-    .aicell.r{padding-bottom:12px}
-  }
-
-  /* vertical diagram flow (narrow viewports) */
-  .vflow{display:flex;flex-direction:column;align-items:stretch;gap:0}
-  .vlayer,.vgroup{border:1px solid var(--border);border-radius:13px;padding:10px;
-    background:var(--surface2);display:flex;flex-direction:column;gap:7px}
-  .vgroup{border-style:dashed;background:none;padding:12px 10px}
-  .vtag{font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
-    color:var(--ink3);padding:1px 2px 2px}
-  .vnode{border:1.5px solid var(--border2);border-radius:10px;padding:9px 12px;
-    background:var(--surface);font-family:"JetBrains Mono",monospace;font-size:12px;
-    font-weight:600;color:var(--ink);word-break:break-word}
-  .vnode b{display:block;font-family:"Inter",sans-serif;font-size:13px;font-weight:750}
-  .vnode span{display:block;font-size:11px;font-weight:400;color:var(--ink3);margin-top:2px;
-    word-break:break-word}
-  .vnode.n-seed{border-color:var(--border2)}
-  .vnode.n-stg{border-color:var(--accent)}
-  .vnode.n-int{border-color:var(--trn-c)}
-  .vnode.n-dim{border-color:var(--accent-deep)}
-  .vnode.n-page,.vnode.n-step{border-color:var(--border2);font-family:"Inter",sans-serif}
-  .vnode.added{border-style:dashed;border-color:var(--accent)}
-  .varrow{align-self:center;display:flex;align-items:center;gap:8px;
-    height:26px;color:var(--ink3);font-size:10.5px}
-  .varrow::before{content:"";width:1.5px;height:100%;
-    background:repeating-linear-gradient(180deg,var(--border2) 0 5px,transparent 5px 9px)}
-  .varrow[data-l]::after{content:attr(data-l)}
-
-  /* file picker replaces the tree on a phone */
-  .fxsel{width:100%;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;
-    color:#c7d0e0;background:#090d15;border:0;border-bottom:1px solid var(--code-border);
-    padding:11px 14px;-webkit-appearance:none;appearance:none;border-radius:0}
-  .fxsel:focus{outline:2px solid var(--accent);outline-offset:-2px}
-
-  .ptsec{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
-    color:var(--accent);margin:22px 0 10px;padding-bottom:7px;
-    border-bottom:1px solid var(--border)}
-  .ptsec:first-of-type{margin-top:18px}
-
   .tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);
     border-radius:13px;padding:4px;width:max-content;max-width:100%;overflow-x:auto;margin-bottom:14px}
   .tab{border:0;background:none;color:var(--ink2);font:inherit;font-size:13px;font-weight:650;
@@ -1225,47 +1159,6 @@ const SLIDES=[
         <thead><tr><th>Company</th><th>Address</th><th>Phone</th><th>Source</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       `;}},
-  {id:'ai',kicker:'USE OF AI',render(){
-    const m=t=>`<span class="mono">${t}</span>`;
-    const row=(k,bad,good)=>`
-      <div class="aik">${k}</div>
-      <div class="aicell l"><span class="mk">✕</span><span class="tx">${bad}</span></div>
-      <div class="aicell r"><span class="mk">✓</span><span class="tx">${good}</span></div>`;
-    return `<h2>Use of AI</h2>
-      <p class="lead">An agent wrote the first
-        <a href="https://github.com/baybailz/crm-dedupe-etl/commit/df690a5d4afdda48ed43839307f2ad39f1f0a41d"
-           target="_blank" rel="noopener">commit</a> from a single prompt. It ran on the first
-        try and every test passed. That is the trap: working and finished are not the same
-        thing. Everything below is what I changed after reading it.</p>
-      <div class="aigrid">
-        <div class="aihcell"></div>
-        <div class="aihead l"><b>One prompt</b><span>nobody reading it</span></div>
-        <div class="aihead r"><b>After I read it</b><span>survives a second engineer</span></div>
-        ${row('Structure',
-          `${m('intermediate/')} and ${m('marts/')}, lifted from a dbt tutorial.`,
-          `${m('staging → transform → conformed')}. The folder tells you what runs when.`)}
-        ${row('Matching',
-          `One ${m('OR')} join, every row against every other. Fine on 26 rows,
-           never returns on a million.`,
-          `Four equality passes, each a hash join. Teaching it a fifth way to match
-           is one line.`)}
-        ${row('Duplicates',
-          `A &ldquo;needs review&rdquo; pile, handed to a person to sort out.`,
-          `It decides. Same name on a different street is a new location, not a duplicate.`)}
-        ${row('Re-runs',
-          `Rebuilt the table every run, and shipped a ${m('MERGE')} script nothing ever called.`,
-          `Incremental on ${m('company_id')}. Load the same file twice and nothing moves.`)}
-        ${row('Coding standards',
-          `${m('from list_recs a join crm b')}. One-letter aliases, join type left to guess.`,
-          `${m('inner join match_targets on purchased_records.zip5 = ...')}. Join type
-           declared, every column traceable to its table.`)}
-        ${row('Model config',
-          `Not one ${m('config()')} across seven models. Everything buried in one project file.`,
-          `Each model declares how it builds. Open the file, see the whole story.`)}
-        ${row('Tests',
-          `Stock tests only. They check the shape of the data, never whether matching worked.`,
-          `The build stops if a match key ever goes blank, because blank matches nothing.`)}
-      </div>`;}},
 ];
 
 /* ================= presentation shell ================= */
