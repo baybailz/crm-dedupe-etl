@@ -10,16 +10,13 @@ with best_match as (
         matched_id,
         matched_name,
         match_class,
+        -- A record can duplicate several things at once, but it gets one
+        -- status, so rank its pairs and keep the first. matched_side sorts
+        -- crm, cross_file, within_file: a match against master data outranks
+        -- a match against another purchased file.
         row_number() over (
             partition by record_key
-            order by
-                case matched_side
-                    when 'crm' then 0
-                    when 'cross_file' then 1
-                    else 2
-                end,
-                name_sim desc,
-                matched_id
+            order by matched_side, name_sim desc, matched_id
         ) as rn
     from {{ ref('trn_scored_pairs') }}
     where match_class is not null
