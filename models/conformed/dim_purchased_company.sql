@@ -23,7 +23,7 @@ select
     new_records.city,
     new_records.state,
     new_records.zip,
-    coalesce(new_records.phone10, new_records.primary_phone_number) as phone_number,
+    new_records.primary_phone_number                          as phone_number,
     new_records.website,
     cast(null as varchar)                                     as primary_contact,
     new_records.source_file,

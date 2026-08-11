@@ -9,7 +9,8 @@
 
 select
     company_id, company_name, address, city, state, zip,
-    phone_number, website, primary_contact,
+    {{ phone_display('phone_number') }} as phone_number,
+    website, primary_contact,
     'crm_company'         as source,
     cast(null as varchar) as source_record_key
 from {{ ref('stg_company') }}
@@ -18,7 +19,8 @@ union all
 
 select
     company_id, company_name, address, city, state, zip,
-    phone_number, website, primary_contact,
+    {{ phone_display('phone_number') }} as phone_number,
+    website, primary_contact,
     source_file || '.csv'   as source,
     source_record_key
 from {{ ref('dim_purchased_company') }}
