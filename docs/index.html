@@ -379,6 +379,42 @@
   .dagnode.added{stroke:var(--accent);stroke-width:1.6;stroke-dasharray:5 3}
   .sw.addsw{background:transparent;border:1.6px dashed var(--accent)}
 
+  /* vertical diagram flow (narrow viewports) */
+  .vflow{display:flex;flex-direction:column;align-items:stretch;gap:0}
+  .vlayer,.vgroup{border:1px solid var(--border);border-radius:13px;padding:10px;
+    background:var(--surface2);display:flex;flex-direction:column;gap:7px}
+  .vgroup{border-style:dashed;background:none;padding:12px 10px}
+  .vtag{font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--ink3);padding:1px 2px 2px}
+  .vnode{border:1.5px solid var(--border2);border-radius:10px;padding:9px 12px;
+    background:var(--surface);font-family:"JetBrains Mono",monospace;font-size:12px;
+    font-weight:600;color:var(--ink);word-break:break-word}
+  .vnode b{display:block;font-family:"Inter",sans-serif;font-size:13px;font-weight:750}
+  .vnode span{display:block;font-size:11px;font-weight:400;color:var(--ink3);margin-top:2px;
+    word-break:break-word}
+  .vnode.n-seed{border-color:var(--border2)}
+  .vnode.n-stg{border-color:var(--accent)}
+  .vnode.n-int{border-color:var(--trn-c)}
+  .vnode.n-dim{border-color:var(--accent-deep)}
+  .vnode.n-page,.vnode.n-step{border-color:var(--border2);font-family:"Inter",sans-serif}
+  .vnode.added{border-style:dashed;border-color:var(--accent)}
+  .varrow{align-self:center;display:flex;align-items:center;gap:8px;
+    height:26px;color:var(--ink3);font-size:10.5px}
+  .varrow::before{content:"";width:1.5px;height:100%;
+    background:repeating-linear-gradient(180deg,var(--border2) 0 5px,transparent 5px 9px)}
+  .varrow[data-l]::after{content:attr(data-l)}
+
+  /* file picker replaces the tree on a phone */
+  .fxsel{width:100%;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;
+    color:#c7d0e0;background:#090d15;border:0;border-bottom:1px solid var(--code-border);
+    padding:11px 14px;-webkit-appearance:none;appearance:none;border-radius:0}
+  .fxsel:focus{outline:2px solid var(--accent);outline-offset:-2px}
+
+  .ptsec{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--accent);margin:22px 0 10px;padding-bottom:7px;
+    border-bottom:1px solid var(--border)}
+  .ptsec:first-of-type{margin-top:18px}
+
   .tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);
     border-radius:13px;padding:4px;width:max-content;max-width:100%;overflow-x:auto;margin-bottom:14px}
   .tab{border:0;background:none;color:var(--ink2);font:inherit;font-size:13px;font-weight:650;
