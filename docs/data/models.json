@@ -26,7 +26,7 @@
   },
   {
    "path": "seeds/purchased_company.csv",
-   "sql": "source_file,row_num,company_name,address_1,address_2,address_3,city,state,zip,website,primary_phone_number\nlist_a,1,7-Eleven,218 Peachtree Street Northwest,,,Atlanta,GA,30303,7-eleven.com,404-555-0100\nlist_a,2,711,218 Peachtree St NW,,,Atlanta,GA,30303,,4045550100\nlist_a,3,\"7-Eleven, Inc.\",218 Peachtree St,Suite 100,,Atlanta,GA,30303,www.7-eleven.com,\nlist_a,4,7-Eleven,1234 Peachtree St SE,,,Atlanta,GA,30303,,404-555-0199\nlist_a,5,The Home Depot,2455 Paces Ferry Rd Southeast,,,Atlanta,GA,30339,homedepot.com,(770) 433-8211\nlist_a,6,Piedmont Coffee Co,500 10th St NW,,,Atlanta,GA,30318,piedmontcoffee.com,404-555-0142\nlist_a,7,Blue Heron Analytics,890 Ponce de Leon Ave NE,,,Atlanta,GA,30306,blueheron.io,404-555-0177\nlist_b,1,7-11,218 Peachtree NW,,,Atlanta,GA,,,404-555-0100\nlist_b,2,Home Depot #123,2455 Paces Ferry Rd SE,,,Atlanta,GA,30339,,770.433.8211\nlist_b,3,Piedmont Coffee,500 10th St NW,,,Atlanta,GA,30318,www.piedmontcoffee.com,\nlist_b,4,Delta Airlines,1030 Delta Blvd,,,Atlanta,GA,30354,delta.com,404-715-2600\nlist_b,5,Sunrise Bakery,77 Marietta St NW,,,Atlanta,GA,30303,sunrisebakeryatl.com,404-555-0161\nlist_b,6,Sunrise Bakery LLC,77 Marietta Street NW,,,Atlanta,GA,30303,,404-555-0161\nlist_b,7,Rockdale Paper Supply,1100 Sigman Road,,,Conyers,GA,30012,rockdalepaper.com,770-555-0128\n"
+   "sql": "source_file,row_num,company_name,address_1,address_2,address_3,city,state,zip,website,primary_phone_number\n"
   },
   {
    "path": "seeds/company_name_aliases.csv",
