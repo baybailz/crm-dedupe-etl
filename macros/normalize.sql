@@ -57,6 +57,15 @@
   nullif(regexp_extract({{ col }}, '^[0-9]+'), '')
 {%- endmacro %}
 
+{#- one display format for the dimension, whichever source a row came from -#}
+{% macro phone_display(col) -%}
+  {%- set d = digits_only(col) -%}
+  case when length({{ d }}) = 10
+       then '(' || substr({{ d }}, 1, 3) || ') ' || substr({{ d }}, 4, 3)
+            || '-' || substr({{ d }}, 7, 4)
+       else {{ col }} end
+{%- endmacro %}
+
 {% macro similarity(a, b) -%}
   jaro_winkler_similarity({{ a }}, {{ b }})
 {%- endmacro %}
