@@ -63,5 +63,44 @@
   "primary_contact": "Priya Patel",
   "source": "crm_company",
   "source_record_key": null
+ },
+ {
+  "company_id": 6,
+  "company_name": "7-Eleven",
+  "address": "1234 Peachtree St SE",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30303",
+  "phone_number": "(404) 555-0199",
+  "website": null,
+  "primary_contact": null,
+  "source": "list_a.csv",
+  "source_record_key": "list_a-004"
+ },
+ {
+  "company_id": 7,
+  "company_name": "Piedmont Coffee Co",
+  "address": "500 10th St NW",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30318",
+  "phone_number": "(404) 555-0142",
+  "website": "piedmontcoffee.com",
+  "primary_contact": null,
+  "source": "list_a.csv",
+  "source_record_key": "list_a-006"
+ },
+ {
+  "company_id": 8,
+  "company_name": "Blue Heron Analytics",
+  "address": "890 Ponce de Leon Ave NE",
+  "city": "Atlanta",
+  "state": "GA",
+  "zip": "30306",
+  "phone_number": "(404) 555-0177",
+  "website": "blueheron.io",
+  "primary_contact": null,
+  "source": "list_a.csv",
+  "source_record_key": "list_a-007"
  }
 ]
