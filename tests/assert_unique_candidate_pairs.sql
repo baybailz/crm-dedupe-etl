@@ -1,5 +1,12 @@
--- Guards: the union across the blocking passes. A pair found by two passes
--- must be compared once, not twice, or every score double counts.
+-- Guards: counting the same collision more than once.
+--
+-- A record can be flagged by several matching keys at once. list_a-005
+-- ("The Home Depot") shares a zip, a city, a phone AND a website with the
+-- CRM's Home Depot. That is one collision found four ways, not four
+-- collisions, so the matching step keeps one copy. This checks it did.
+--
+-- If it ever stopped, the duplicate report would say that company is a
+-- duplicate four times instead of once.
 -- Any row returned fails the build.
 
 select

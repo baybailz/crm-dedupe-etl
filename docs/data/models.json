@@ -82,11 +82,11 @@
   },
   {
    "path": "tests/assert_match_keys_present.sql",
-   "sql": "-- Guards: matching itself. A blank match key scores 0.0 against everything,\n-- so the record matches nothing and imports as new. Nothing errors.\n-- Any row returned fails the build.\n\nselect record_key as offender from {{ ref('stg_purchased_company') }}\nwhere coalesce(name_match, '') = ''\nunion all\nselect cast(company_id as varchar) from {{ ref('stg_company') }}\nwhere coalesce(name_match, '') = ''\n"
+   "sql": "-- Guards: matching itself.\n--\n-- Nothing is ever compared on its raw name. \"7-Eleven, Inc.\" is cleaned to\n-- \"7 eleven\" first, and that cleaned value is what every comparison uses.\n-- If the cleaning ever returns blank, that record has nothing to compare,\n-- so it matches nobody and imports as a brand new company.\n--\n-- Nothing errors when this happens. The build stays green and the duplicate\n-- turns up in the CRM later. It happened here once.\n-- Any row returned fails the build.\n\nselect record_key as offender from {{ ref('stg_purchased_company') }}\nwhere coalesce(name_match, '') = ''\nunion all\nselect cast(company_id as varchar) from {{ ref('stg_company') }}\nwhere coalesce(name_match, '') = ''\n"
   },
   {
    "path": "tests/assert_unique_candidate_pairs.sql",
-   "sql": "-- Guards: the union across the blocking passes. A pair found by two passes\n-- must be compared once, not twice, or every score double counts.\n-- Any row returned fails the build.\n\nselect\n    record_key,\n    matched_side,\n    matched_id\nfrom {{ ref('trn_scored_pairs') }}\ngroup by record_key, matched_side, matched_id\nhaving count(*) > 1\n"
+   "sql": "-- Guards: counting the same collision more than once.\n--\n-- A record can be flagged by several matching keys at once. list_a-005\n-- (\"The Home Depot\") shares a zip, a city, a phone AND a website with the\n-- CRM's Home Depot. That is one collision found four ways, not four\n-- collisions, so the matching step keeps one copy. This checks it did.\n--\n-- If it ever stopped, the duplicate report would say that company is a\n-- duplicate four times instead of once.\n-- Any row returned fails the build.\n\nselect\n    record_key,\n    matched_side,\n    matched_id\nfrom {{ ref('trn_scored_pairs') }}\ngroup by record_key, matched_side, matched_id\nhaving count(*) > 1\n"
   }
  ],
  "v1": [
