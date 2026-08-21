@@ -8,15 +8,15 @@
 <meta property="og:site_name" content="Company Data Pipeline">
 <meta property="og:title" content="Import company lists. Create zero duplicates.">
 <meta property="og:description" content="A live dedupe pipeline you can run from the page: Python stages a file, dbt blocks and scores every candidate pair, GitHub Actions publishes the result.">
-<meta property="og:url" content="https://baybailz.github.io/crm-dedupe-etl/">
-<meta property="og:image" content="https://baybailz.github.io/crm-dedupe-etl/og.png">
+<meta property="og:url" content="https://baybailz.github.io/data-engineering-scenario-crm-dedupe/">
+<meta property="og:image" content="https://baybailz.github.io/data-engineering-scenario-crm-dedupe/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Import company lists. Create zero duplicates. python, dbt, duckdb, github actions, jaro-winkler.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Import company lists. Create zero duplicates.">
 <meta name="twitter:description" content="A live dedupe pipeline you can run from the page: Python, dbt, DuckDB, GitHub Actions.">
-<meta name="twitter:image" content="https://baybailz.github.io/crm-dedupe-etl/og.png">
+<meta name="twitter:image" content="https://baybailz.github.io/data-engineering-scenario-crm-dedupe/og.png">
 <title>Company Data Pipeline</title>
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%23016698"/><path d="M36 10 18 36h11l-3 18 20-28H34l2-16z" fill="white"/></svg>'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -175,7 +175,7 @@
   .fx{width:290px;flex:none;background:#090d15;display:flex;flex-direction:column}
   .fxhead{padding:11px 16px 7px;font-size:9.5px;font-weight:800;letter-spacing:.14em;
     color:#4d5a72;font-family:"Inter",sans-serif}
-  .fxrepo{padding:0 16px 8px;font-size:11.5px;font-weight:700;color:#8b96ac;
+  .fxrepo{padding:0 16px 8px;font-size:11.5px;font-weight:700;color:#8b96ac;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     font-family:"JetBrains Mono",monospace}
   .fxbody{overflow:auto;padding:0 8px 12px}
   .fxrow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;
@@ -208,6 +208,20 @@
   .ide.full .fxrow{font-size:12px}
   html.noscroll{overflow:hidden}
   .codebody,.fxbody{overscroll-behavior:contain}
+  /* Scrollbars: Windows Chrome/Edge/Firefox paint 17px grey system bars by default;
+     style them thin and theme-aware so they match macOS overlay bars. */
+  *{scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+  .code,.codebody,.fx,.fxbody,.dtable{scrollbar-color:#2a3a52 transparent}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;
+    border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:var(--ink3);border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-corner{background:transparent}
+  .code ::-webkit-scrollbar-thumb,.codebody::-webkit-scrollbar-thumb,
+  .fxbody::-webkit-scrollbar-thumb{background:#2a3a52;border:2px solid transparent;background-clip:padding-box}
+  .code ::-webkit-scrollbar-thumb:hover,.codebody::-webkit-scrollbar-thumb:hover,
+  .fxbody::-webkit-scrollbar-thumb:hover{background:#3d5070;border:2px solid transparent;background-clip:padding-box}
   .dtable{border-collapse:collapse;white-space:nowrap;font-size:11.5px;
     font-family:"JetBrains Mono",monospace}
   .dtable th{color:#7e8aa0;text-align:left;padding:2px 12px 8px 0;font-size:9.5px;
@@ -600,8 +614,8 @@
   <main id="main"></main>
 
   <footer>
-    <a href="https://github.com/baybailz/crm-dedupe-etl" target="_blank" rel="noopener">source ↗</a>
-    <a href="https://github.com/baybailz/crm-dedupe-etl/actions" target="_blank" rel="noopener">actions ↗</a>
+    <a href="https://github.com/baybailz/data-engineering-scenario-crm-dedupe" target="_blank" rel="noopener">source ↗</a>
+    <a href="https://github.com/baybailz/data-engineering-scenario-crm-dedupe/actions" target="_blank" rel="noopener">actions ↗</a>
     <span class="spacer"></span>
     <button class="linklike" id="resetBtn">reset demo</button>
   </footer>
@@ -614,7 +628,7 @@
      <span class="mono">api.github.com</span>.</p>
   <ol>
     <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → fine-grained tokens</a></li>
-    <li>Repository access: <b>Only select repositories → crm-dedupe-etl</b></li>
+    <li>Repository access: <b>Only select repositories → data-engineering-scenario-crm-dedupe</b></li>
     <li>Permissions: <b>Actions: read &amp; write</b> · <b>Contents: read</b></li>
   </ol>
   <input id="tokenInput" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
@@ -628,7 +642,7 @@
 
 <script>
 'use strict';
-const REPO = 'baybailz/crm-dedupe-etl';
+const REPO = 'baybailz/data-engineering-scenario-crm-dedupe';
 const API  = 'https://api.github.com';
 const WORKFLOW = 'pipeline.yml';
 
@@ -1154,7 +1168,7 @@ const SLIDES=[
                 esc(f.path)}${isNew?'  +':''}</option>`;}).join('')}</select>`
           : `<aside class="fx">
                <div class="fxhead">EXPLORER</div>
-               <div class="fxrepo">crm-dedupe-etl</div>
+               <div class="fxrepo">data-engineering-scenario-crm-dedupe</div>
                <div class="fxbody">${fileTree(files,cur.path)}</div>
              </aside>`}
         ${idePaneHtml(codeSlideCtx())}

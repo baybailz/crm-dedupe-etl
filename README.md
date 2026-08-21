@@ -5,7 +5,7 @@ arrives as `7-Eleven`, `711`, and `7-Eleven, Inc.`, with the address written thr
 different ways. This pipeline works out which rows are already there, imports the
 ones that are not, and records what happened to every row.
 
-**[Live demo →](https://baybailz.github.io/crm-dedupe-etl/)** — a presentation
+**[Live demo →](https://baybailz.github.io/data-engineering-scenario-crm-dedupe/)** — a presentation
 and a working console. The Load button dispatches a GitHub Actions workflow
 that runs the real pipeline and publishes the result back to the page.
 
