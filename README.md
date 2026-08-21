@@ -121,12 +121,10 @@ truncated and the phone blocking key was quietly dead.
 Anyone can prompt an agent into a working pipeline. The question is whether it
 survives contact with a team.
 
-This one is built to production standards. Layers are named for what they do,
-contracts sit beside the models they govern, and the conventions hold as the
-project grows. Adding a blocking key is one line in a list. Adding a source is one
-stage model. Changing how a match is scored happens in one file, and the tests
-fail loudly if it breaks something downstream. A steward maintains the alias list
-in a spreadsheet, not in SQL.
+This one is built to production standards. Adding a blocking key is one line in a
+list. Adding a source is one stage model. Changing how a match is scored happens in
+one file, and the tests fail loudly if it breaks something downstream. A steward
+maintains the alias list in a spreadsheet, not in SQL.
 
 That is the part the prompt does not give you.
 
