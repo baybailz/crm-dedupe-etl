@@ -48,19 +48,21 @@ than duplicating.
 
 ```
 incoming/          company CSVs waiting to be loaded
-scripts/           load_purchased.py, the ingest step
+scripts/           run.py (ingest) · export_json.py · scenario.py (page hooks)
 seeds/             master data, aliases, generated purchased seed
-models/staging/    normalize both sides into match keys
+models/stage/      normalize both sides into match keys
 models/transform/  block, score, classify candidate pairs
 models/conformed/  dim_company · dim_purchased_company
                    dim_company_duplicates · dim_record_status
+models/datamart/   dm_naive_import, the same rows with no matching
 tests/             match keys are never blank · candidate pairs are unique
 baseline/          the project as it stood before this change, for the V1 view
 docs/              the presentation and console, published by Pages
 ```
 
-Materializations and tags live in each model's `config()`. Every node is
-tagged `master_data`, so one selector runs the whole project.
+Materializations and tags are declared per layer in `dbt_project.yml`; a model
+tightens them in its own `config()` where it needs to. Every node is tagged
+`scenario`, so one selector runs the whole project.
 
 ## Run it
 
@@ -68,12 +70,14 @@ Locally, free, about two minutes:
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python scripts/load_purchased.py           # stage the next file
-.venv/bin/dbt build --select tag:master_data         # models + tests
+export DBT_PROFILES_DIR=.
+.venv/bin/python scripts/run.py                      # stage the next file
+.venv/bin/dbt build --select tag:scenario            # models + tests
 ```
 
 Repeat to load the remaining files one at a time; `--action reset` starts over.
-Those are the same commands the GitHub Actions workflow runs.
+Those are the same commands the GitHub Actions workflow runs. Every pull request
+runs the same build plus `sqlfluff`; nothing merges red.
 
 ## Deliverables
 
@@ -98,9 +102,9 @@ and sent it back until the system matched how I would have built it by hand.
 
 | Unsupervised | Directed |
 |---|---|
-| `models/intermediate/` and `models/marts/` | `staging/` → `transform/` → `conformed/`, prefixes to match |
+| `models/intermediate/` and `models/marts/` | `stage/` → `transform/` → `conformed/`, prefixes to match |
 | `from list_recs a join crm b` | `inner join crm_companies as crm_company` |
-| materializations and seed types in `dbt_project.yml` | `config()` in each model, a `schema.yml` per folder |
+| seed types guessed by dbt | pinned in `seeds/schema.yml`, a `schema.yml` per folder |
 | a rebuilt table plus a `MERGE` script nothing ran | `dim_company` incremental on `company_id`, a real MERGE |
 | alias seed holds `711,7 eleven` | alias seed holds `7-11,7-Eleven`, normalized at join |
 | one `OR` join and a `needs_review` status | declarative blocking keys, identity is name and address |
@@ -120,7 +124,7 @@ survives contact with a team.
 This one is built to production standards. Layers are named for what they do,
 contracts sit beside the models they govern, and the conventions hold as the
 project grows. Adding a blocking key is one line in a list. Adding a source is one
-staging model. Changing how a match is scored happens in one file, and the tests
+stage model. Changing how a match is scored happens in one file, and the tests
 fail loudly if it breaks something downstream. A steward maintains the alias list
 in a spreadsheet, not in SQL.
 

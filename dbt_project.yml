@@ -1,11 +1,46 @@
-# Project config: where seeds, models, and macros live.
+# Project config. Layers follow the series conventions:
+# stage (views, normalize) -> transform (tables, the matching logic)
+# -> conformed (publish, tested) -> datamart (what BI reads).
 # Seed column types live in seeds/schema.yml.
-# Materializations and tags are declared inside each model with config().
-name: crm_dedupe
+name: scenario
 version: "1.0.0"
-profile: crm_dedupe
+profile: scenario
 
 model-paths: ["models"]
 seed-paths: ["seeds"]
 macro-paths: ["macros"]
 test-paths: ["tests"]
+
+clean-targets: ["target", "dbt_packages"]
+
+data_tests:
+  scenario:
+    +store_failures: true
+    +schema: dbt_audit
+
+seeds:
+  scenario:
+    +tags: ["scenario"]
+
+models:
+  scenario:
+    +tags: ["scenario"]
+    stage:
+      +materialized: view
+      +tags: ["stage"]
+    transform:
+      +materialized: table
+      +tags: ["transform"]
+    conformed:
+      # dim_company overrides this to incremental; the other three are
+      # rebuilt every run because they are a verdict on the current load.
+      +materialized: table
+      +tags: ["conformed", "master_data"]
+      +post-hook: "{{ metadata_audit() }}"
+    datamart:
+      +materialized: view
+      +tags: ["datamart"]
+      +post-hook: "{{ metadata_audit() }}"
+
+on-run-start:
+  - "{{ create_audit_table() }}"

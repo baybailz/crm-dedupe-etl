@@ -1,8 +1,10 @@
 # One connection target: a local DuckDB file, zero cost, no credentials.
-crm_dedupe:
+# CI and the pipeline workflow both use it; a Snowflake target would be a
+# second output here and nothing else changes.
+scenario:
   target: duckdb
   outputs:
     duckdb:
       type: duckdb
-      path: crm_dedupe.duckdb
+      path: scenario.duckdb
       threads: 4

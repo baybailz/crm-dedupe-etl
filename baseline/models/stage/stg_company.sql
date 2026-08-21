@@ -1,6 +1,6 @@
 -- Staging view over the CRM company table.
 -- Collapses stray whitespace so the dimension reads clean values.
-{{ config(materialized='view', tags=['master_data']) }}
+{{ config(materialized='view') }}
 
 select
     company_id,

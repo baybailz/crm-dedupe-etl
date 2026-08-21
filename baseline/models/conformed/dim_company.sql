@@ -1,5 +1,5 @@
 -- The company dimension. One row per company in the CRM.
-{{ config(materialized='table', tags=['master_data']) }}
+{{ config(materialized='table') }}
 
 select
     company_id,

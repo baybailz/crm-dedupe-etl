@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """Write docs/data/*.json for the web console. Run after dbt build.
 
-    summary.json               counts, file queue, next file
-    company.json               dim_company
-    record_status.json         one verdict per purchased record
-    potential_duplicates.json  one row per suspect pair
-    next_file.json             preview of the next pending file
-    avoided.json               the naive union, what importing blind would give
-    logs.json                  run history the console renders as a log
-    models.json                project source for the code browser
-    model_data.json            row samples behind the play button
+    summary.json     queue state, row counts, scenario headline numbers
+    tables.json      {table: rows} for every table in scenario.json export.tables
+    next_file.json   preview of the next pending incoming file
+    logs.json        run history (one entry per run) + raw step logs
+    models.json      project source for the code browser (+ compiled Jinja)
+    model_data.json  row samples behind every model, for the play button
+    lineage.json     nodes + edges from the dbt manifest, for the DAG slide
 """
 
 import argparse
 import csv
+import importlib.util
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -22,42 +22,14 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "data"
-DB = ROOT / "crm_dedupe.duckdb"
+CFG = json.loads((ROOT / "docs" / "scenario.json").read_text())
+DB = ROOT / "scenario.duckdb"
 STATE_FILE = ROOT / "state" / "loaded_files.json"
 INCOMING = ROOT / "incoming"
 HISTORY_LIMIT = 12
-
-
-AVOIDED_SQL = """
-select * from (
-    select
-        stg_company.company_name,
-        stg_company.address,
-        stg_company.city,
-        stg_company.state,
-        stg_company.zip,
-        stg_company.phone_number,
-        'crm_company'            as source,
-        stg_company.name_match   as cluster_key
-    from main.stg_company
-
-    union all
-
-    select
-        stg_purchased_company.company_name,
-        stg_purchased_company.address_1,
-        stg_purchased_company.city,
-        stg_purchased_company.state,
-        stg_purchased_company.zip,
-        stg_purchased_company.primary_phone_number,
-        stg_purchased_company.source_file || '.csv' as source,
-        stg_purchased_company.name_match
-    from main.stg_purchased_company
-) as unioned
-order by cluster_key,
-         case when source = 'crm_company' then 0 else 1 end,
-         source
-"""
+SOURCE_GLOBS = ["scripts/*.py", ".github/workflows/*.yml", "dbt_project.yml",
+                "profiles.yml", "seeds/*.yml", "seeds/*.csv", "macros/*.sql",
+                "models/**/*.sql", "models/**/*.yml", "tests/*.sql", "tests/*.yml"]
 
 
 def rows_of(con, sql: str) -> list[dict]:
@@ -67,9 +39,42 @@ def rows_of(con, sql: str) -> list[dict]:
 
 
 def read_log(path: str | None) -> str:
-    if path and Path(path).exists():
-        return Path(path).read_text(errors="replace").rstrip()
-    return ""
+    p = Path(path) if path else None
+    return p.read_text(errors="replace").rstrip() if p and p.exists() else ""
+
+
+def load_hooks():
+    spec = importlib.util.spec_from_file_location("scenario", ROOT / "scripts" / "scenario.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def lineage() -> dict:
+    """Nodes and edges from target/manifest.json, layered by folder/type."""
+    mf = ROOT / "target" / "manifest.json"
+    if not mf.exists():
+        return {"nodes": [], "edges": []}
+    m = json.loads(mf.read_text())
+    nodes, edges = [], []
+    layer_of = {}
+    for uid, n in m["nodes"].items():
+        if n["resource_type"] not in ("model", "seed"):
+            continue
+        if n["resource_type"] == "seed":
+            layer = "seed"
+        else:
+            layer = Path(n["path"]).parts[0] if "/" in n["path"] else "models"
+        layer_of[uid] = layer
+        nodes.append({"id": n["name"], "layer": layer, "type": n["resource_type"],
+                      "path": ("seeds/" if layer == "seed" else "models/") + n["path"]})
+    for uid, n in m["nodes"].items():
+        if uid not in layer_of:
+            continue
+        for dep in n.get("depends_on", {}).get("nodes", []):
+            if dep in layer_of:
+                edges.append([m["nodes"][dep]["name"], n["name"]])
+    return {"nodes": nodes, "edges": edges, "layers": CFG["export"]["layers"]}
 
 
 def main() -> None:
@@ -78,87 +83,49 @@ def main() -> None:
     ap.add_argument("--dbt-log")
     ap.add_argument("--action", default="load_next")
     args = ap.parse_args()
-
     OUT.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect(str(DB), read_only=True)
-
-    company = rows_of(con, """
-        select * from main.dim_company order by company_id
-    """)
-    record_status = rows_of(con, """
-        select * from main.dim_record_status order by record_key
-    """)
-    dupes = rows_of(con, """
-        select * from main.dim_company_duplicates order by record_key
-    """)
-
-    # What a naive import would have produced, against whatever is loaded now.
-    avoided = rows_of(con, AVOIDED_SQL)
-    seen: dict[str, int] = {}
-    for r in avoided:
-        seen[r["cluster_key"]] = seen.get(r["cluster_key"], 0) + 1
-    for r in avoided:
-        r["in_cluster"] = seen[r["cluster_key"]] > 1
-
-    con.close()
+    hooks = load_hooks()
 
     loaded = json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else []
     all_files = sorted(p.stem for p in INCOMING.glob("*.csv"))
     queue = [f for f in all_files if f not in loaded]
     next_file = queue[0] if queue else None
-
     next_rows = []
     if next_file:
         with open(INCOMING / f"{next_file}.csv", newline="") as fh:
             next_rows = list(csv.DictReader(fh))
 
-    status_counts: dict[str, int] = {}
-    for r in record_status:
-        status_counts[r["status"]] = status_counts.get(r["status"], 0) + 1
-
-    summary = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "companies_total": len(company),
-        "companies_imported": sum(1 for c in company
-                                if c["source"] != "crm_company"),
-        "records_processed": len(record_status),
-        "duplicates_blocked": sum(
-            v for k, v in status_counts.items() if k.startswith("duplicate")),
-        "status_counts": status_counts,
-        "files_loaded": loaded,
-        "files_pending": queue,
-        "next_file": next_file,
-    }
-
-    last_file = loaded[-1] if (args.action == "load_next" and loaded) else None
-    added = sum(1 for r in record_status
-                if r["status"] == "new" and r["source_file"] == last_file) if last_file else 0
-    passed = 0
     dbt_text = read_log(args.dbt_log)
-    for token in dbt_text.split():
-        if token.startswith("PASS="):
-            passed = int(token.split("=")[1])
+    passed = failed = 0
+    for tok in dbt_text.split():
+        if tok.startswith("PASS="):
+            passed = int(tok.split("=")[1])
+        if tok.startswith("ERROR="):
+            failed = int(tok.split("=")[1])
 
-    relations = [
-        "crm_company", "purchased_company", "company_name_aliases",
-        "stg_company", "stg_purchased_company", "trn_scored_pairs",
-        "dim_company_duplicates", "dim_record_status",
-        "dim_purchased_company", "dim_company",
-    ]
-    with duckdb.connect(str(DB), read_only=True) as con2:
-        model_data = {rel: rows_of(con2, f"select * from main.{rel} order by all limit 120")
-                      for rel in relations}
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    ctx = {"action": args.action, "loaded": loaded, "queue": queue,
+           "next_file": next_file, "passed": passed, "failed": failed, "cfg": CFG}
 
-    # Run history: the console shows a line per run, so every run appends
-    # here rather than overwriting. A reset starts the log over.
-    entry = {
-        "at": summary["generated_at"],
-        "action": args.action,
-        "loaded_file": last_file,
-        "added": added,
-        "passed": passed,
-        "companies_total": len(company),
+    con = duckdb.connect(str(DB), read_only=True)
+    tables = {t: rows_of(con, f"select * from main.{t}") for t in CFG["export"]["tables"]}
+    relations = [r[0] for r in con.execute(
+        "select table_name from information_schema.tables where table_schema='main' "
+        "order by table_name").fetchall()]
+    model_data = {rel: rows_of(con, f"select * from main.{rel} order by all limit 120")
+                  for rel in relations}
+    audit = rows_of(con, "select * from audit.tbl_metadata_audit order by loaded_at desc limit 200") \
+        if con.execute("select count(*) from information_schema.tables where table_schema='audit'").fetchone()[0] else []
+    summary = {
+        "generated_at": now,
+        "files_loaded": loaded, "files_pending": queue, "next_file": next_file,
+        "row_counts": {t: len(r) for t, r in tables.items()},
+        **hooks.summary(con, ctx),
     }
+    entry = {"at": now, "action": args.action, "passed": passed, "failed": failed,
+             **hooks.history(con, ctx)}
+    con.close()
+
     previous = []
     log_file = OUT / "logs.json"
     if args.action != "reset" and log_file.exists():
@@ -166,79 +133,35 @@ def main() -> None:
             previous = json.loads(log_file.read_text()).get("history", [])
         except (ValueError, OSError):
             previous = []
+    logs = {"generated_at": now, "action": args.action, "passed": passed, "failed": failed,
+            "history": (previous + [entry])[-HISTORY_LIMIT:],
+            "python": read_log(args.python_log), "dbt": dbt_text}
 
-    logs = {
-        "generated_at": summary["generated_at"],
-        "action": args.action,
-        "loaded_file": last_file,
-        "added": added,
-        "passed": passed,
-        "history": (previous + [entry])[-HISTORY_LIMIT:],
-        "python": read_log(args.python_log),
-        "dbt": read_log(args.dbt_log),
-    }
+    # Project source, published from the repo itself so the deck can never
+    # drift from the code. Compiled SQL is included where Jinja changed it.
+    files = sorted({p for g in SOURCE_GLOBS for p in ROOT.glob(g) if p.is_file()})
+    compiled = {}
+    for p in files:
+        rel = p.relative_to(ROOT).as_posix()
+        built = ROOT / "target" / "compiled" / CFG.get("dbt_project", "scenario") / rel
+        if built.is_file() and rel.startswith("models/"):
+            # Only models whose Jinja does more than ref()/source()/config():
+            # those are the ones where "what does this compile to" is a question.
+            src = re.sub(r"\{\{\s*config\([\s\S]*?\)\s*\}\}", "", p.read_text())
+            src = re.sub(r"\{\{\s*(ref|source)\([^}]*\)\s*\}\}", "", src)
+            if "{{" in src or "{%" in src:
+                compiled[rel] = built.read_text().strip()
+    models = {"files": [{"path": p.relative_to(ROOT).as_posix(), "sql": p.read_text()}
+                        for p in files], "compiled": compiled}
 
-    # The dbt project source, for the presentation's model browser —
-    # published from the repo itself so the deck can never drift from the code.
-    model_files = [
-        "scripts/load_purchased.py",
-        ".github/workflows/pipeline.yml",
-        "dbt_project.yml",
-        "seeds/schema.yml",
-        "profiles.yml",
-        "seeds/crm_company.csv",
-        "seeds/purchased_company.csv",
-        "seeds/company_name_aliases.csv",
-        "macros/normalize.sql",
-        "models/staging/schema.yml",
-        "models/staging/stg_company.sql",
-        "models/staging/stg_purchased_company.sql",
-        "models/transform/schema.yml",
-        "models/transform/trn_scored_pairs.sql",
-        "models/conformed/schema.yml",
-        "models/conformed/dim_company_duplicates.sql",
-        "models/conformed/dim_record_status.sql",
-        "models/conformed/dim_purchased_company.sql",
-        "models/conformed/dim_company.sql",
-        "tests/schema.yml",
-        "tests/assert_match_keys_present.sql",
-        "tests/assert_unique_candidate_pairs.sql",
-    ]
-    # The project before this request, for the presentation's V1/V2 toggle.
-    # Left value is where the file sits in the project; right is what to read.
-    v1_files = [
-        ("dbt_project.yml", "baseline/dbt_project.yml"),
-        ("profiles.yml", "profiles.yml"),
-        ("macros/normalize.sql", "baseline/macros/normalize.sql"),
-        ("seeds/schema.yml", "baseline/seeds/schema.yml"),
-        ("seeds/crm_company.csv", "seeds/crm_company.csv"),
-        ("models/staging/schema.yml", "baseline/models/staging/schema.yml"),
-        ("models/staging/stg_company.sql", "baseline/models/staging/stg_company.sql"),
-        ("models/conformed/schema.yml", "baseline/models/conformed/schema.yml"),
-        ("models/conformed/dim_company.sql", "baseline/models/conformed/dim_company.sql"),
-    ]
-    # trn_scored_pairs is the only templated model, so publish what its Jinja
-    # actually compiles to. dbt writes this during the build that just ran.
-    templated = "models/transform/trn_scored_pairs.sql"
-    built = ROOT / "target" / "compiled" / "crm_dedupe" / templated
-    models = {
-        "files": [{"path": p, "sql": (ROOT / p).read_text()} for p in model_files],
-        "v1": [{"path": shown, "sql": (ROOT / src).read_text()}
-               for shown, src in v1_files],
-        "compiled": {templated: built.read_text()} if built.exists() else {},
-    }
-
+    extra = hooks.extra(ctx) if hasattr(hooks, "extra") else {}
     for name, payload in [
-        ("summary.json", summary),
-        ("company.json", company),
-        ("record_status.json", record_status),
-        ("potential_duplicates.json", dupes),
+        *extra.items(),
+        ("summary.json", summary), ("tables.json", tables),
         ("next_file.json", {"name": next_file, "rows": next_rows}),
-        ("avoided.json", {"rows": avoided,
-                          "duplicated": sum(1 for r in avoided if r["in_cluster"])}),
-        ("logs.json", logs),
-        ("models.json", models),
-        ("model_data.json", model_data),
+        ("logs.json", logs), ("models.json", models),
+        ("model_data.json", model_data), ("lineage.json", lineage()),
+        ("audit.json", audit),
     ]:
         (OUT / name).write_text(json.dumps(payload, indent=1, default=str) + "\n")
         print(f"wrote docs/data/{name}")

@@ -1,5 +1,5 @@
 # One dispatchable workflow = one pipeline run:
-# stage one company file -> dbt build (tag:master_data) -> publish JSON.
+# land the next file -> dbt build -> publish JSON for the page.
 # Fails closed: a red build commits nothing.
 name: pipeline
 
@@ -22,43 +22,38 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
+    env:
+      ACTION: ${{ inputs.action || 'load_next' }}
+      DBT_PROFILES_DIR: .
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-
-      - name: Install dbt
-        run: pip install dbt-core dbt-duckdb duckdb
+      - run: pip install -r requirements.txt
 
       # shell: bash => pipefail, so a failing step still fails through tee
-      - name: Stage next company file (Python)
+      - name: Land the next file (Python)
         shell: bash
-        run: python scripts/load_purchased.py --action "${{ inputs.action || 'load_next' }}" 2>&1 | tee /tmp/python.log
+        run: python scripts/run.py --action "$ACTION" 2>&1 | tee /tmp/python.log
 
-      - name: Run dbt (seeds + models + tests)
+      - name: dbt build (seeds + models + tests)
         shell: bash
         run: |
-          FLAGS=""
-          [ "${{ inputs.action || 'load_next' }}" = "reset" ] && FLAGS="--full-refresh"
-          echo "+ dbt build --select tag:master_data $FLAGS"
-          dbt build --select tag:master_data $FLAGS --no-use-colors 2>&1 | tee /tmp/dbt.log
-        env:
-          DBT_PROFILES_DIR: .
+          SELECT=$(python -c "import json;print(json.load(open('docs/scenario.json'))['dbt_select'])")
+          FLAGS=""; [ "$ACTION" = "reset" ] && FLAGS="--full-refresh"
+          echo "+ dbt build --select $SELECT $FLAGS"
+          dbt build --select "$SELECT" $FLAGS --no-use-colors 2>&1 | tee /tmp/dbt.log
 
-      - name: Export tables for the web console
-        run: >
-          python scripts/export_json.py
-          --action "${{ inputs.action || 'load_next' }}"
-          --python-log /tmp/python.log --dbt-log /tmp/dbt.log
+      - name: Export JSON for the page
+        run: python scripts/export_json.py --action "$ACTION" --python-log /tmp/python.log --dbt-log /tmp/dbt.log
 
       - name: Commit results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add state seeds/purchased_company.csv docs/data
+          git add state seeds docs/data
           git diff --cached --quiet && echo "nothing changed" && exit 0
-          git commit -m "pipeline: ${{ inputs.action || 'load_next' }} ($(date -u +%FT%TZ))"
+          git commit -m "pipeline: $ACTION ($(date -u +%FT%TZ))"
           git push

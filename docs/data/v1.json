@@ -1,0 +1,64 @@
+{
+ "files": [
+  {
+   "path": "dbt_project.yml",
+   "sql": "# Project config: where seeds, models, and macros live.\nname: scenario\nversion: \"1.0.0\"\nprofile: scenario\n\nmodel-paths: [\"models\"]\nseed-paths: [\"seeds\"]\nmacro-paths: [\"macros\"]\n"
+  },
+  {
+   "path": "profiles.yml",
+   "sql": "# One connection target: a local DuckDB file, zero cost, no credentials.\n# CI and the pipeline workflow both use it; a Snowflake target would be a\n# second output here and nothing else changes.\nscenario:\n  target: duckdb\n  outputs:\n    duckdb:\n      type: duckdb\n      path: scenario.duckdb\n      threads: 4\n"
+  },
+  {
+   "path": "macros/normalize.sql",
+   "sql": "{#\n  Shared SQL helpers.\n  replace_all exists because DuckDB replaces only the FIRST match unless the\n  'g' option is passed; Snowflake's regexp_replace is global already.\n#}\n\n{% macro replace_all(expr, pattern, replacement) -%}\n  {%- if target.type == 'snowflake' -%}\n    regexp_replace({{ expr }}, '{{ pattern }}', '{{ replacement }}')\n  {%- else -%}\n    regexp_replace({{ expr }}, '{{ pattern }}', '{{ replacement }}', 'g')\n  {%- endif -%}\n{%- endmacro %}\n"
+  },
+  {
+   "path": "seeds/schema.yml",
+   "sql": "# Seed properties.\nversion: 2\n\nseeds:\n  - name: crm_company\n    description: Master company data, the system of record.\n    config:\n      tags: ['scenario']\n      column_types:\n        zip: varchar(10)\n        phone_number: varchar(20)\n"
+  },
+  {
+   "path": "seeds/crm_company.csv",
+   "sql": "company_id,company_name,address,city,state,zip,phone_number,website,primary_contact\n1,7-Eleven,218 Peachtree Street NW,Atlanta,GA,30303,(404) 555-0100,www.7-eleven.com,Jane Smith\n2,Home Depot,2455 Paces Ferry Road SE,Atlanta,GA,30339,770-433-8211,www.homedepot.com,Mike Jones\n3,Delta Air Lines,1030 Delta Boulevard,Atlanta,GA,30354,(404) 715-2600,www.delta.com,Ana Ruiz\n4,Chick-fil-A,5200 Buffington Road,Atlanta,GA,30349,(404) 765-8000,www.chick-fil-a.com,Sam Carter\n5,Coca-Cola,1 Coca-Cola Plaza NW,Atlanta,GA,30313,(404) 676-2121,www.coca-cola.com,Priya Patel\n"
+  },
+  {
+   "path": "models/stage/schema.yml",
+   "sql": "# Staging contracts.\nversion: 2\n\nmodels:\n  - name: stg_company\n    description: Master company data from the CRM.\n    columns:\n      - name: company_id\n        tests: [unique, not_null]\n"
+  },
+  {
+   "path": "models/stage/stg_company.sql",
+   "sql": "-- Staging view over the CRM company table.\n-- Collapses stray whitespace so the dimension reads clean values.\n{{ config(materialized='view') }}\n\nselect\n    company_id,\n    trim({{ replace_all(\"coalesce(company_name, '')\", ' +', ' ') }}) as company_name,\n    trim({{ replace_all(\"coalesce(address, '')\", ' +', ' ') }})      as address,\n    trim(city)          as city,\n    upper(trim(state))  as state,\n    trim(zip)           as zip,\n    phone_number,\n    website,\n    primary_contact\nfrom {{ ref('crm_company') }}\n"
+  },
+  {
+   "path": "models/conformed/schema.yml",
+   "sql": "# Conformed contracts.\nversion: 2\n\nmodels:\n  - name: dim_company\n    description: The company dimension, one row per CRM company.\n    columns:\n      - name: company_id\n        tests: [unique, not_null]\n"
+  },
+  {
+   "path": "models/conformed/dim_company.sql",
+   "sql": "-- The company dimension. One row per company in the CRM.\n{{ config(materialized='table') }}\n\nselect\n    company_id,\n    company_name,\n    address,\n    city,\n    state,\n    zip,\n    phone_number,\n    website,\n    primary_contact\nfrom {{ ref('stg_company') }}\n"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "crm_company",
+   "layer": "seed"
+  },
+  {
+   "id": "stg_company",
+   "layer": "stage"
+  },
+  {
+   "id": "dim_company",
+   "layer": "conformed"
+  }
+ ],
+ "edges": [
+  [
+   "crm_company",
+   "stg_company"
+  ],
+  [
+   "stg_company",
+   "dim_company"
+  ]
+ ]
+}

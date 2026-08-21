@@ -1,7 +1,6 @@
 -- Deliverable 2: one verdict per purchased record.
--- Spine is staging, not the transform: a record with no candidate pairs still
+-- Spine is stage, not the transform: a record with no candidate pairs still
 -- needs a verdict. Best match wins by priority: master, then file, else new.
-{{ config(materialized='table', tags=['master_data']) }}
 
 with best_match as (
     select
@@ -16,7 +15,7 @@ with best_match as (
         -- a match against another purchased file.
         row_number() over (
             partition by record_key
-            order by matched_side, name_sim desc, matched_id
+            order by matched_side asc, name_sim desc, matched_id asc
         ) as rn
     from {{ ref('trn_scored_pairs') }}
     where match_class is not null
@@ -43,9 +42,10 @@ select
         when best_match.match_class = 'duplicate' and best_match.matched_side = 'cross_file'
             then 'duplicate_cross_file'
         else 'new'
-    end                 as status,
+    end as status,
     best_match.matched_id,
-    best_match.matched_name
+    best_match.matched_name,
+    current_timestamp as dbt_run_timestamp
 from {{ ref('stg_purchased_company') }} as stg_purchased_company
 left join best_match
     on stg_purchased_company.record_key = best_match.record_key and best_match.rn = 1
