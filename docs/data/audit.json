@@ -1,32 +1,32 @@
 [
  {
   "model_name": "dim_company",
-  "row_count": 5,
-  "invocation_id": "339dd63e-7229-4d98-b766-8044deab33d9",
-  "loaded_at": "2026-08-21 19:17:14.659000"
+  "row_count": 8,
+  "invocation_id": "53ebaaa2-622c-4422-b62a-988dd1738109",
+  "loaded_at": "2026-08-21 19:18:08.121000"
  },
  {
   "model_name": "dim_purchased_company",
-  "row_count": 0,
-  "invocation_id": "339dd63e-7229-4d98-b766-8044deab33d9",
-  "loaded_at": "2026-08-21 19:17:14.504000"
+  "row_count": 3,
+  "invocation_id": "53ebaaa2-622c-4422-b62a-988dd1738109",
+  "loaded_at": "2026-08-21 19:18:07.976000"
  },
  {
   "model_name": "dim_company_duplicates",
-  "row_count": 0,
-  "invocation_id": "339dd63e-7229-4d98-b766-8044deab33d9",
-  "loaded_at": "2026-08-21 19:17:14.333000"
+  "row_count": 7,
+  "invocation_id": "53ebaaa2-622c-4422-b62a-988dd1738109",
+  "loaded_at": "2026-08-21 19:18:07.802000"
  },
  {
   "model_name": "dim_record_status",
-  "row_count": 0,
-  "invocation_id": "339dd63e-7229-4d98-b766-8044deab33d9",
-  "loaded_at": "2026-08-21 19:17:14.333000"
+  "row_count": 7,
+  "invocation_id": "53ebaaa2-622c-4422-b62a-988dd1738109",
+  "loaded_at": "2026-08-21 19:18:07.801000"
  },
  {
   "model_name": "dm_naive_import",
-  "row_count": 5,
-  "invocation_id": "339dd63e-7229-4d98-b766-8044deab33d9",
-  "loaded_at": "2026-08-21 19:17:14.168000"
+  "row_count": 12,
+  "invocation_id": "53ebaaa2-622c-4422-b62a-988dd1738109",
+  "loaded_at": "2026-08-21 19:18:07.633000"
  }
 ]
