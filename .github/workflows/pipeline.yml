@@ -53,7 +53,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add state seeds docs/data
+          git add state seeds docs/data scenario.duckdb
           git diff --cached --quiet && echo "nothing changed" && exit 0
           git commit -m "pipeline: $ACTION ($(date -u +%FT%TZ))"
+          # Two dispatches seconds apart must both land: rebase onto whatever arrived first.
+          git pull --rebase -X theirs origin main || true
           git push
