@@ -122,10 +122,7 @@ window.SLIDES = [
         <span class="schip">duckdb</span><span class="schip">github actions</span>
         <span class="schip">jaro-winkler</span>
       </div>
-      <p class="lead">The database already has companies in it. Sales bought company lists where one
-        company arrives as 7-Eleven, 711, and 7-Eleven, Inc., with the address written three
-        different ways. This pipeline works out which rows are already there, imports the ones
-        that are not, and records what happened to every row.</p>
+      <div class="whw"><span class="whw-k">What</span><span>Sales bought lists of companies. Many are already in the CRM, spelled differently: 7-Eleven, 711, 7-Eleven, Inc.</span><span class="whw-k">How</span><span>Names and addresses are cleaned the same way on both sides, likely matches are scored, and only genuinely new companies are added. Every row gets a recorded verdict.</span><span class="whw-k">Why</span><span>One company becoming five ruins reporting and wastes sales calls. This keeps the CRM clean without a person checking each row.</span></div>
       <div class="byline">${S.esc(S.CFG.author)}</div>
     </div>`;}},
 
