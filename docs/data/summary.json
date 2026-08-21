@@ -1,26 +1,22 @@
 {
- "generated_at": "2026-08-21T19:18:08+00:00",
- "files_loaded": [
-  "list_a"
- ],
+ "generated_at": "2026-08-21T19:49:51+00:00",
+ "files_loaded": [],
  "files_pending": [
+  "list_a",
   "list_b",
   "list_c",
   "list_d"
  ],
- "next_file": "list_b",
+ "next_file": "list_a",
  "row_counts": {
-  "dim_company": 8,
-  "dim_record_status": 7,
-  "dim_company_duplicates": 7,
-  "dm_naive_import": 12
+  "dim_company": 5,
+  "dim_record_status": 0,
+  "dim_company_duplicates": 0,
+  "dm_naive_import": 5
  },
- "companies_total": 8,
- "companies_imported": 3,
- "records_processed": 7,
- "duplicates_blocked": 4,
- "status_counts": {
-  "new": 3,
-  "duplicate_of_crm": 4
- }
+ "companies_total": 5,
+ "companies_imported": 0,
+ "records_processed": 0,
+ "duplicates_blocked": 0,
+ "status_counts": {}
 }
