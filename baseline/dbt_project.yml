@@ -1,7 +1,7 @@
 # Project config: where seeds, models, and macros live.
-name: crm_dedupe
+name: scenario
 version: "1.0.0"
-profile: crm_dedupe
+profile: scenario
 
 model-paths: ["models"]
 seed-paths: ["seeds"]

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Edit these for each scenario. The rest of the page reads docs/scenario.json at runtime. -->
 <meta name="description" content="Import company lists, create zero duplicates. A live dedupe pipeline: Python, dbt, DuckDB, GitHub Actions.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Company Data Pipeline">
@@ -389,7 +390,7 @@
     font-size:10px;font-weight:800;line-height:1;flex:none}
   .newdot.inline{position:static;transform:none;display:inline-flex;
     vertical-align:middle;margin:0 1px 0 4px;position:relative;top:-1px}
-  .fxrow.added{color:var(--ink)}
+  .fxrow.added{color:#e9eef7}
   .dagnode.added{stroke:var(--accent);stroke-width:1.6;stroke-dasharray:5 3}
   .sw.addsw{background:transparent;border:1.6px dashed var(--accent)}
 
@@ -585,6 +586,10 @@
     .conn{width:2px;height:22px;margin:2px 0 2px 26px;align-self:flex-start;
       background:repeating-linear-gradient(180deg,var(--border2) 0 5px,transparent 5px 10px)}
   }
+  .dagnode.n-dm{fill:var(--warn-soft);stroke:var(--warn-line)}
+  .vnode.n-dm{background:var(--warn-soft);border-color:var(--warn-line)}
+  .sw.dm{background:var(--warn-soft);border-color:var(--warn-line)}
+  .extraActs{display:inline-flex;gap:8px;margin-right:10px}
 </style>
 </head>
 <body>
@@ -594,8 +599,8 @@
   <header>
     <div class="logo"><svg viewBox="0 0 64 64"><path d="M36 8 16 37h12l-4 19 22-30H33l3-18z"/></svg></div>
     <div class="hmeta">
-      <h1>Company Data Pipeline</h1>
-      <div class="sub">Engineering exercise · Bailey Thompson</div>
+      <h1 id="hTitle">…</h1>
+      <div class="sub" id="hSub"></div>
     </div>
     <div class="spacer"></div>
     <nav class="modes" id="modes">
@@ -614,8 +619,8 @@
   <main id="main"></main>
 
   <footer>
-    <a href="https://github.com/baybailz/data-engineering-scenario-crm-dedupe" target="_blank" rel="noopener">source ↗</a>
-    <a href="https://github.com/baybailz/data-engineering-scenario-crm-dedupe/actions" target="_blank" rel="noopener">actions ↗</a>
+    <a id="srcLink" href="#" target="_blank" rel="noopener">source ↗</a>
+    <a id="actLink" href="#" target="_blank" rel="noopener">actions ↗</a>
     <span class="spacer"></span>
     <button class="linklike" id="resetBtn">reset demo</button>
   </footer>
@@ -623,12 +628,12 @@
 
 <dialog id="tokenDlg">
   <h3>Connect GitHub</h3>
-  <p>Loading dispatches a GitHub Actions workflow, which needs a fine-grained
+  <p>Running dispatches a GitHub Actions workflow, which needs a fine-grained
      token. Stored only in this browser; sent only to
      <span class="mono">api.github.com</span>.</p>
   <ol>
     <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → fine-grained tokens</a></li>
-    <li>Repository access: <b>Only select repositories → data-engineering-scenario-crm-dedupe</b></li>
+    <li>Repository access: <b>Only select repositories → <span id="dlgRepo"></span></b></li>
     <li>Permissions: <b>Actions: read &amp; write</b> · <b>Contents: read</b></li>
   </ol>
   <input id="tokenInput" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
@@ -642,15 +647,18 @@
 
 <script>
 'use strict';
-const REPO = 'baybailz/data-engineering-scenario-crm-dedupe';
-const API  = 'https://api.github.com';
-const WORKFLOW = 'pipeline.yml';
+/* =====================================================================
+   Shell. Generic: reads docs/scenario.json, renders the presentation deck
+   from window.SLIDES (docs/slides.js) and the console from window.PANELS
+   (docs/panels.js), drives the GitHub Actions workflow, and polls results.
+   Scenario authors edit slides.js / panels.js / scenario.json, not this.
+   ===================================================================== */
+const API='https://api.github.com';
+let CFG=null;            // docs/scenario.json
+let REPO='', WORKFLOW='pipeline.yml';
 
-const ICO = {
+const ICO={
   file:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
-  py:'<svg viewBox="0 0 24 24"><path d="M4 17V7l8-4 8 4v10l-8 4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>',
-  dbt:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>',
-  crm:'<svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M9 4v16"/></svg>',
   check:'<svg viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7"/></svg>',
   copy:'<svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><rect x="4" y="4" width="12" height="12" rx="2"/></svg>',
   search:'<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>',
@@ -661,271 +669,167 @@ const ICO = {
   compiled:'<svg viewBox="0 0 24 24"><path d="M7 4v6l-3 4h16l-3-4V4"/><path d="M9 4h6M9 18h6M12 14v4"/></svg>',
   close:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
 };
-const STATUS_META = {
-  new:{label:'new',cls:'b-new',ico:ICO.check},
-  duplicate_of_crm:{label:'dup · CRM',cls:'b-dup',ico:ICO.copy},
-  duplicate_cross_file:{label:'dup · other file',cls:'b-dup',ico:ICO.copy},
-  duplicate_within_file:{label:'dup · same file',cls:'b-dup',ico:ICO.copy},
-};
 
-let D = {summary:null, company:[], log:[], dupes:[], next:{name:null,rows:[]}, models:null};
-let modelPick = 'models/transform/trn_scored_pairs.sql';
-let archZoom = false;
-let ideFull = false;
-let ideView = 'code';
-function toggleIdeFull(){
-  ideFull=!ideFull;
-  document.documentElement.classList.toggle('noscroll',ideFull);
-  const ide=document.querySelector('.ide');
-  if(ide){ide.classList.toggle('full',ideFull);swapIdePane();}
-  else renderPresent();
-}
-let prevSummary=null, prevCompanyIds=null;
-let mode='present', slideIdx=0, slideDir=1;
-let currentTab='incoming', searchCompany='';
+let D={summary:null,tables:{},next:{name:null,rows:[]},logs:null,models:null,modelData:null,lineage:null,audit:[]};
+let modelPick=null, archZoom=false, ideFull=false, ideView='code';
+let mode='present', slideIdx=0, slideDir=1, currentTab=null;
 let running=false, runPhase='idle', runLink=null, runMsg='', histBase=0;
-let projVer='v2';
+let prevSummary=null;
 const NARROW=matchMedia('(max-width:760px)');
 const isNarrow=()=>NARROW.matches;
 let wasNarrow=isNarrow();
-addEventListener('resize',()=>{
-  const n=isNarrow();
-  if(n===wasNarrow)return;
-  wasNarrow=n;
-  render();
-});
+addEventListener('resize',()=>{const n=isNarrow();if(n===wasNarrow)return;wasNarrow=n;render();});
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const token=()=>localStorage.getItem('gh_token')||'';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const fmtN=n=>Number(n).toLocaleString();
-const fmtTime=iso=>{
-  const d=new Date(iso||'');
-  return isNaN(d)?'—':d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',
-                                               second:'2-digit',hour12:false});
-};
+const fmtTime=iso=>{const d=new Date(iso||'');return isNaN(d)?'—':d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});};
+const fmtCell=v=>v==null?'∅':typeof v==='number'&&!Number.isInteger(v)?v.toFixed(3):String(v);
 
-/* ================= theme ================= */
+/* ---------- theme ---------- */
 const mq=matchMedia('(prefers-color-scheme: dark)');
-function applyTheme(){
-  const pref=localStorage.getItem('theme')||'auto';
-  document.documentElement.classList.toggle('dark', pref==='dark'||(pref==='auto'&&mq.matches));
-}
+function applyTheme(){const p=localStorage.getItem('theme')||'auto';
+  document.documentElement.classList.toggle('dark',p==='dark'||(p==='auto'&&mq.matches));}
 mq.addEventListener('change',applyTheme);
-$('themeBtn').onclick=()=>{
-  const cur=localStorage.getItem('theme')||'auto';
-  const next=cur==='auto'?(mq.matches?'light':'dark'):cur==='dark'?'light':'dark';
-  localStorage.setItem('theme',next);applyTheme();toast(`Theme: ${next}`);
-};
+$('themeBtn').onclick=()=>{const c=localStorage.getItem('theme')||'auto';
+  const n=c==='auto'?(mq.matches?'light':'dark'):c==='dark'?'light':'dark';
+  localStorage.setItem('theme',n);applyTheme();toast(`Theme: ${n}`);};
 applyTheme();
 
-/* ================= toasts ================= */
+/* ---------- toasts ---------- */
 let denyCount=0,denyTimer=null;
 function denyFlash(btn){
   denyCount=Math.min(denyCount+1,5);
   btn.style.setProperty('--deny',(0.07+denyCount*0.05).toFixed(2));
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches){
-    btn.classList.add('deny');setTimeout(()=>btn.classList.remove('deny'),260);
-  }else{
-    btn.classList.remove('deny');void btn.offsetWidth;btn.classList.add('deny');
-    setTimeout(()=>btn.classList.remove('deny'),120);
-  }
-  clearTimeout(denyTimer);
-  denyTimer=setTimeout(()=>{denyCount=0;},2500);
+  btn.classList.remove('deny');void btn.offsetWidth;btn.classList.add('deny');
+  setTimeout(()=>btn.classList.remove('deny'),120);
+  clearTimeout(denyTimer);denyTimer=setTimeout(()=>{denyCount=0;},2500);
 }
-function toast(msg,ms=3800){
-  const el=document.createElement('div');
-  el.className='toast';el.innerHTML=msg;
-  $('toasts').appendChild(el);
-  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),450)},ms);
-}
+function toast(msg,ms=3800){const el=document.createElement('div');el.className='toast';el.innerHTML=msg;
+  $('toasts').appendChild(el);setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),450)},ms);}
 
-/* ================= data ================= */
+/* ---------- data ---------- */
 async function fetchJson(name,viaApi){
   if(viaApi&&token()){
-    const r=await fetch(`${API}/repos/${REPO}/contents/docs/data/${name}?ref=main`,{
-      headers:{Accept:'application/vnd.github.raw+json',Authorization:`Bearer ${token()}`}});
-    if(!r.ok)throw new Error(`${name}: HTTP ${r.status}`);
-    return r.json();
+    const r=await fetch(`${API}/repos/${REPO}/contents/docs/data/${name}?ref=main`,
+      {headers:{Accept:'application/vnd.github.raw+json',Authorization:`Bearer ${token()}`}});
+    if(!r.ok)throw new Error(`${name}: HTTP ${r.status}`);return r.json();
   }
   const r=await fetch(`data/${name}?t=${Date.now()}`,{cache:'no-store'});
-  if(!r.ok)throw new Error(`${name}: HTTP ${r.status}`);
-  return r.json();
+  if(!r.ok)throw new Error(`${name}: HTTP ${r.status}`);return r.json();
 }
 async function loadAll(viaApi=false){
-  const [summary,company,log,dupes,next]=await Promise.all(
-    ['summary.json','company.json','record_status.json','potential_duplicates.json','next_file.json']
-      .map(n=>fetchJson(n,viaApi)));
-  const models=await fetchJson('models.json',viaApi).catch(()=>null);
-  const logs=await fetchJson('logs.json',viaApi).catch(()=>null);
-  
-  const modelData=await fetchJson('model_data.json',viaApi).catch(()=>null);
-  const avoided=await fetchJson('avoided.json',viaApi).catch(()=>null);
-  D={summary,company,log,dupes,next,models,logs,modelData,avoided};
+  const opt=n=>fetchJson(n,viaApi).catch(()=>null);
+  const [summary,tables,next,logs,models,modelData,lineage,audit]=await Promise.all(
+    [fetchJson('summary.json',viaApi),opt('tables.json'),opt('next_file.json'),opt('logs.json'),
+     opt('models.json'),opt('model_data.json'),opt('lineage.json'),opt('audit.json')]);
+  D={summary,tables:tables||{},next:next||{name:null,rows:[]},logs,models,modelData,lineage,audit:audit||[]};
+  if(!modelPick&&models?.files?.length){
+    modelPick=(models.files.find(f=>f.path.startsWith('models/transform/')&&f.path.endsWith('.sql'))||models.files.find(f=>f.path.endsWith('.sql'))||models.files[0]).path;
+  }
   render();
 }
 
-/* ================= tiny syntax highlighters ================= */
-function highlight(code, lang){
+/* ---------- code browser ---------- */
+function highlight(code,lang){
   const rules={
     py:[[/"""[\s\S]*?"""/,'c-com'],[/#.*$/m,'c-com'],[/'[^'\n]*'|"[^"\n]*"/,'c-str'],
-        [/\b(def|return|if|elif|else|for|in|not|with|open|import|from|as|None|True|False|and|or|start|print)\b/,'c-kw'],
-        [/\b\d+\b/,'c-num']],
+        [/\b(def|return|if|elif|else|for|in|not|with|open|import|from|as|None|True|False|and|or|print|class|lambda)\b/,'c-kw'],[/\b\d+\b/,'c-num']],
     sql:[[/--.*$/m,'c-com'],[/\{#[\s\S]*?#\}/,'c-com'],[/\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\}/,'c-jinja'],[/'[^'\n]*'/,'c-str'],
-        [/\b(select|from|join|left|right|inner|on|where|case|when|then|else|end|as|with|and|or|not|null|is|union|all|coalesce|row_number|over|partition|by|order|group|using|cast|varchar|true|false|min|max|desc)\b/i,'c-kw'],
+        [/\b(select|from|join|left|right|inner|on|where|case|when|then|else|end|as|with|and|or|not|null|is|union|all|coalesce|row_number|over|partition|by|order|group|using|cast|varchar|true|false|min|max|desc|count|sum|in|exists|distinct|limit)\b/i,'c-kw'],
         [/\b\d+(\.\d+)?\b/,'c-num']],
-    yml:[[/#.*$/m,'c-com'],[/"[^"\n]*"|'[^'\n]*'/,'c-str'],
-        [/^(\s*(?:- )?[\w.-]+):/m,'c-key'],[/\b(true|false)\b/,'c-num']],
+    yml:[[/#.*$/m,'c-com'],[/"[^"\n]*"|'[^'\n]*'/,'c-str'],[/^(\s*(?:- )?[\w.-]+):/m,'c-key'],[/\b(true|false)\b/,'c-num']],
   }[lang];
   if(!rules)return esc(code);
   const master=new RegExp(rules.map(r=>`(?:${r[0].source})`).join('|'),'gmi');
   let out='',last=0,m;
   while((m=master.exec(code))!==null){
-    if(m[0]==='') {master.lastIndex++;continue;}
+    if(m[0]===''){master.lastIndex++;continue;}
     out+=esc(code.slice(last,m.index));
     let cls='c-kw';
-    for(const [re,c] of rules){
-      if(new RegExp('^(?:'+re.source+')$','mi').test(m[0])){cls=c;break;}
-    }
-    // keep newlines outside spans so the line splitter cannot break a tag
+    for(const [re,c] of rules){if(new RegExp('^(?:'+re.source+')$','mi').test(m[0])){cls=c;break;}}
     out+=m[0].split('\n').map(seg=>seg?`<span class="${cls}">${esc(seg)}</span>`:'').join('\n');
     last=m.index+m[0].length;
   }
-  out+=esc(code.slice(last));
-  return out;
+  return out+esc(code.slice(last));
 }
+const langOf=p=>p.endsWith('.yml')?'yml':p.endsWith('.py')?'py':p.endsWith('.csv')?'csv':'sql';
 function fileTree(files,cur){
-  // nested {dirs..., __files:[...]} from the flat path list
   const root={};
-  files.forEach(f=>{
-    const parts=f.path.split('/');
-    let n=root;
-    parts.forEach((p,i)=>{
-      if(i===parts.length-1)(n.__files??=[]).push(f);
-      else n=(n[p]??={});
-    });
-  });
-  const DIR_ORDER={macros:0,models:1,tests:2,seeds:3,scripts:4,'.github':5,workflows:0,staging:0,transform:1,conformed:2};
-  const v1=v1Paths();
-  const render=(node,depth)=>{
+  files.forEach(f=>{const parts=f.path.split('/');let n=root;
+    parts.forEach((p,i)=>{if(i===parts.length-1)(n.__files??=[]).push(f);else n=(n[p]??={});});});
+  const ORDER={macros:0,models:1,tests:2,seeds:3,scripts:4,'.github':5,workflows:0,
+               stage:0,staging:0,transform:1,conformed:2,datamart:3};
+  const rec=(node,depth)=>{
     let h='';
-    Object.keys(node).filter(k=>k!=='__files')
-      .sort((a,b)=>(DIR_ORDER[a]??9)-(DIR_ORDER[b]??9)||a.localeCompare(b))
-      .forEach(k=>{
-        h+=`<div class="fxrow dir" style="padding-left:${8+depth*14}px">▾ ${esc(k)}</div>`;
-        h+=render(node[k],depth+1);
-      });
-    (node.__files||[]).forEach(f=>{
-      const nm=f.path.split('/').pop();
-      const ext=nm.endsWith('.yml')?'yml':nm.endsWith('.py')?'py':nm.endsWith('.csv')?'csv':'sql';
-      const isNew=projVer==='v2'&&v1.size&&!v1.has(f.path);
-      h+=`<button class="fxrow${f.path===cur?' on':''}${isNew?' added':''}" data-open="${esc(f.path)}"
-            style="padding-left:${8+depth*14}px"><span class="fico ${ext}"></span><span
-            class="fname">${esc(nm)}</span>${
-            isNew?'<span class="newdot" title="added for this request">+</span>':''}</button>`;
-    });
+    Object.keys(node).filter(k=>k!=='__files').sort((a,b)=>(ORDER[a]??9)-(ORDER[b]??9)||a.localeCompare(b))
+      .forEach(k=>{h+=`<div class="fxrow dir" style="padding-left:${8+depth*14}px">▾ ${esc(k)}</div>`;h+=rec(node[k],depth+1);});
+    (node.__files||[]).forEach(f=>{const nm=f.path.split('/').pop();
+      h+=`<button class="fxrow${f.path===cur?' on':''}" data-open="${esc(f.path)}" style="padding-left:${8+depth*14}px"><span class="fico ${langOf(nm)}"></span><span class="fname">${esc(nm)}</span></button>`;});
     return h;
   };
-  return render(root,0);
+  return rec(root,0);
 }
-function numbered(code,lang){
-  return highlight(code,lang).split('\n').map((line,i)=>
-    `<span class="cline"><span class="cno">${i+1}</span><span class="ctxt">${line||' '}</span></span>`
-  ).join('');
-}
+const numbered=(code,lang)=>highlight(code,lang).split('\n').map((l,i)=>
+  `<span class="cline"><span class="cno">${i+1}</span><span class="ctxt">${l||' '}</span></span>`).join('');
 function codePanel(title,sub,code,lang,maxH,barExtra=''){
-  return `<div class="code"><div class="codebar">
-      <span class="codetitle">${esc(title)}<span class="dim">${esc(sub)}</span></span>${barExtra}</div>
+  return `<div class="code"><div class="codebar"><span class="codetitle">${esc(title)}<span class="dim">${esc(sub)}</span></span>${barExtra}</div>
     <div class="codebody"${maxH?` style="max-height:${maxH}px"`:''}>${numbered(code,lang)}</div></div>`;
 }
-const ideMaxBtn=()=>`<button class="idemax" data-idemax
-  title="${ideFull?'Exit (Esc)':'Expand'}">${ideFull?ICO.close:ICO.expand}</button>`;
-const ideViewBtn=()=>`<button class="idemax" data-ideview
-  title="${ideView==='data'?'Back to the source':'Run · view the data'}">${
-  ideView==='data'?ICO.codegl:ICO.play}</button>`;
-// Only the templated model has a compiled form worth showing.
-const compiledFor=path=>D.models?.compiled?.[path];
-const ideCompiledBtn=()=>`<button class="idemax${ideView==='compiled'?' on':''}" data-idecompiled
-  title="${ideView==='compiled'?'Back to the source':'See what the Jinja compiles to'}">${
-  ideView==='compiled'?ICO.codegl:ICO.compiled}</button>`;
-const fmtCell=v=>v==null?'∅':typeof v==='number'&&!Number.isInteger(v)?v.toFixed(3):String(v);
-function verFiles(){
-  if(projVer==='v1')return D.models.v1||[];
-  return D.models.files.filter(f=>!f.path.startsWith('.github'));
-}
-const v1Paths=()=>new Set((D.models?.v1||[]).map(f=>f.path));
-function codeSlideCtx(){
-  const files=verFiles();
-  const cur=files.find(f=>f.path===modelPick)||files[0];
+function toggleIdeFull(){ideFull=!ideFull;document.documentElement.classList.toggle('noscroll',ideFull);
+  const ide=document.querySelector('.ide');if(ide){ide.classList.toggle('full',ideFull);swapIdePane();}else renderPresent();}
+const ideMaxBtn=()=>`<button class="idemax" data-idemax title="${ideFull?'Exit (Esc)':'Expand'}">${ideFull?ICO.close:ICO.expand}</button>`;
+const ideViewBtn=()=>`<button class="idemax" data-ideview title="${ideView==='data'?'Back to the source':'Run · view the data'}">${ideView==='data'?ICO.codegl:ICO.play}</button>`;
+const compiledFor=p=>D.models?.compiled?.[p];
+const ideCompiledBtn=()=>`<button class="idemax${ideView==='compiled'?' on':''}" data-idecompiled title="${ideView==='compiled'?'Back to the source':'See what the Jinja compiles to'}">${ideView==='compiled'?ICO.codegl:ICO.compiled}</button>`;
+function codeCtx(){
+  const files=D.models.files;const cur=files.find(f=>f.path===modelPick)||files[0];
   const rel=cur.path.split('/').pop().replace(/\.[a-z]+$/,'');
-  // V1 is the shape of the project before this change, not a state the
-  // warehouse was ever in, so there is no data to show behind it.
-  return {files,cur,rel,rows:projVer==='v1'?undefined:D.modelData?.[rel]};
-}
-const VER_HOME={v1:'models/staging/stg_company.sql',
-                v2:'models/transform/trn_scored_pairs.sql'};
-function setVer(v){
-  if(projVer===v)return;
-  projVer=v;
-  if(!verFiles().some(f=>f.path===modelPick))modelPick=VER_HOME[v];
-  renderPresent();
-}
-function verToggle(){
-  const b=(v,label)=>`<button class="vbtn${projVer===v?' on':''}" data-ver="${v}">${label}</button>`;
-  return `<div class="vtog">${b('v1','V1')}${b('v2','V2')}</div>`;
-}
-function wireVerToggle(){
-  document.querySelectorAll('[data-ver]').forEach(b=>b.onclick=()=>setVer(b.dataset.ver));
+  return {files,cur,rel,rows:D.modelData?.[rel]};
 }
 function idePaneHtml({cur,rel,rows}){
-  const lang=p=>p.endsWith('.yml')?'yml':p.endsWith('.py')?'py':p.endsWith('.csv')?'csv':'sql';
   const built=compiledFor(cur.path);
-  const btns=`<span class="barbtns">${Array.isArray(rows)?ideViewBtn():''}${
-    built?ideCompiledBtn():''}${ideMaxBtn()}</span>`;
-  if(ideView==='compiled'&&built){
-    return codePanel(cur.path,`compiled · ${built.split('\n').length} lines`,
-      built,'sql',0,btns);
-  }
-  if(ideView==='data'&&Array.isArray(rows)){
-    return `<div class="code"><div class="codebar">
-          <span class="codetitle">${esc(rel)}<span class="dim">${rows.length} rows · last run</span></span>
-        ${btns}</div>
-      <div class="codebody" style="padding:15px 18px">${dataBody(rows)}</div></div>`;
-  }
+  const btns=`<span class="barbtns">${Array.isArray(rows)?ideViewBtn():''}${built?ideCompiledBtn():''}${ideMaxBtn()}</span>`;
+  if(ideView==='compiled'&&built)return codePanel(cur.path,`compiled · ${built.split('\n').length} lines`,built,'sql',0,btns);
+  if(ideView==='data'&&Array.isArray(rows))return `<div class="code"><div class="codebar"><span class="codetitle">${esc(rel)}<span class="dim">${rows.length} rows · last run</span></span>${btns}</div><div class="codebody" style="padding:15px 18px">${dataBody(rows)}</div></div>`;
   const title=isNarrow()?cur.path.split('/').pop():cur.path;
-  return codePanel(title,`${cur.sql.split('\n').length} lines`,
-    cur.sql,lang(cur.path),0,btns);
+  return codePanel(title,`${cur.sql.split('\n').length} lines`,cur.sql,langOf(cur.path),0,btns);
 }
 function wireIdeButtons(){
   document.querySelectorAll('[data-idemax]').forEach(b=>b.onclick=toggleIdeFull);
-  document.querySelectorAll('[data-ideview]').forEach(b=>b.onclick=()=>{
-    ideView=ideView==='data'?'code':'data';swapIdePane();
-  });
-  document.querySelectorAll('[data-idecompiled]').forEach(b=>b.onclick=()=>{
-    ideView=ideView==='compiled'?'code':'compiled';swapIdePane();
-  });
+  document.querySelectorAll('[data-ideview]').forEach(b=>b.onclick=()=>{ideView=ideView==='data'?'code':'data';swapIdePane();});
+  document.querySelectorAll('[data-idecompiled]').forEach(b=>b.onclick=()=>{ideView=ideView==='compiled'?'code':'compiled';swapIdePane();});
 }
-function swapIdePane(){
-  const pane=document.querySelector('.ide .code');
-  if(!pane)return renderPresent();
-  pane.outerHTML=idePaneHtml(codeSlideCtx());
-  wireIdeButtons();
-}
+function swapIdePane(){const pane=document.querySelector('.ide .code');if(!pane)return renderPresent();
+  pane.outerHTML=idePaneHtml(codeCtx());wireIdeButtons();}
 function dataBody(rows){
   if(!rows.length)return '<div class="dempty">0 rows at the current demo state</div>';
   const cols=Object.keys(rows[0]);
-  return `<table class="dtable"><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead>
-    <tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(fmtCell(r[c]))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  return `<table class="dtable"><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(fmtCell(r[c]))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+function ideHtml(){
+  if(!D.models?.files?.length)return `<p class="lead">Not published yet. It lands with the next pipeline run (<span class="mono">docs/data/models.json</span>).</p>`;
+  const {files,cur}=codeCtx();
+  return `<div class="ide tall${ideFull?' full':''}">
+    ${isNarrow()
+      ?`<select class="fxsel" id="fxsel" aria-label="Choose a file">${files.map(f=>`<option value="${esc(f.path)}"${f.path===cur.path?' selected':''}>${esc(f.path)}</option>`).join('')}</select>`
+      :`<aside class="fx"><div class="fxhead">EXPLORER</div><div class="fxrepo">${esc(REPO.split('/')[1]||REPO)}</div><div class="fxbody">${fileTree(files,cur.path)}</div></aside>`}
+    ${idePaneHtml(codeCtx())}</div>`;
 }
 
-/* ================= slide content ================= */
+/* ---------- diagrams ---------- */
 const ARCH_FULL=[0,58,1000,252], ARCH_PIPE=[250,64,500,192];
 function svgArch(){
+  const st=CFG.pipeline_steps, sub=CFG.arch_subtitles||{};
   const vb=(archZoom?ARCH_PIPE:ARCH_FULL).join(' ');
+  const boxes=st.slice(0,3).map((s,i)=>{const x=276+i*158,w=i===1?150:132,cx=x+w/2;
+    return `<rect class="hnode${i===1?' hot':''}" x="${x}" y="127" width="${w}" height="76" rx="12"/>
+      <text class="htext" x="${cx}" y="157" text-anchor="middle">${esc(s.label)}</text>
+      <text class="hsub" x="${cx}" y="178" text-anchor="middle">${esc(sub[s.key]||'')}</text>`;}).join('');
   return `<svg class="arch-svg${archZoom?' zoomed':''}" viewBox="${vb}" role="img" aria-label="Architecture loop">
-    <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0 0 10 5 0 10z" fill="var(--ink3)"/></marker></defs>
+    <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="var(--ink3)"/></marker></defs>
     <g class="outer">
       <rect class="hnode" x="28" y="118" width="170" height="94" rx="14"/>
       <text class="htext" x="113" y="152" text-anchor="middle">This page</text>
@@ -934,695 +838,270 @@ function svgArch(){
       <rect class="hnode" x="802" y="118" width="170" height="94" rx="14"/>
       <text class="htext" x="887" y="150" text-anchor="middle">Repository</text>
       <text class="hsub" x="887" y="170" text-anchor="middle">docs/data/*.json</text>
-      <text class="hsub" x="887" y="186" text-anchor="middle">state · company seed</text>
-      <path class="hline flowing" d="M198 165 H270"/>
-      <text class="hlabel" x="237" y="153" text-anchor="middle">dispatch</text>
-      <path class="hline flowing" d="M724 165 H796"/>
-      <text class="hlabel" x="763" y="153" text-anchor="middle">commit</text>
+      <text class="hsub" x="887" y="186" text-anchor="middle">state · landing seed</text>
+      <path class="hline flowing" d="M198 165 H270"/><text class="hlabel" x="237" y="153" text-anchor="middle">dispatch</text>
+      <path class="hline flowing" d="M724 165 H796"/><text class="hlabel" x="763" y="153" text-anchor="middle">commit</text>
       <path class="hline flowing" d="M887 216 L887 248 Q887 258 877 258 L123 258 Q113 258 113 248 L113 222"/>
       <text class="hlabel" x="500" y="282" text-anchor="middle">poll the run · pull fresh tables + logs</text>
     </g>
     <rect class="hgroup" x="260" y="76" width="480" height="152" rx="16"/>
     <text class="hlabel" x="276" y="100">Data pipeline via GitHub Actions</text>
-    <rect class="hnode" x="276" y="127" width="132" height="76" rx="12"/>
-    <text class="htext" x="342" y="157" text-anchor="middle">Stage data</text>
-    <text class="hsub" x="342" y="178" text-anchor="middle">load_purchased.py</text>
-    <rect class="hnode hot" x="425" y="127" width="150" height="76" rx="12"/>
-    <text class="htext" x="500" y="153" text-anchor="middle">Transform data</text>
-    <text class="hsub" x="500" y="173" text-anchor="middle">dbt build --select</text>
-    <text class="hsub" x="500" y="189" text-anchor="middle">tag:master_data</text>
-    <rect class="hnode" x="592" y="127" width="132" height="76" rx="12"/>
-    <text class="htext" x="658" y="157" text-anchor="middle">Export data</text>
-    <text class="hsub" x="658" y="178" text-anchor="middle">export_json.py</text>
-    <path class="hline" d="M408 165 H417"/>
-    <path class="hline" d="M575 165 H584"/>
-  </svg>`;
-}
-function archZoomToggle(){
-  const svg=document.querySelector('.arch-svg'); if(!svg)return;
-  const from=archZoom?ARCH_PIPE:ARCH_FULL, to=archZoom?ARCH_FULL:ARCH_PIPE;
-  archZoom=!archZoom;
-  svg.classList.toggle('zoomed',archZoom);
-  const btn=$('archZoomBtn');
-  if(btn)btn.innerHTML=archZoom?'&#8854; full picture':'&#8853; zoom to pipeline';
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches){
-    svg.setAttribute('viewBox',to.join(' '));return;
-  }
-  const t0=performance.now(),ms=460;
-  const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
-  const step=now=>{
-    const p=Math.min(1,(now-t0)/ms),e=ease(p);
-    svg.setAttribute('viewBox',from.map((f,i)=>f+(to[i]-f)*e).join(' '));
-    if(p<1)requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
-function svgDagV1(){
-  const node=(cls,x,y,label,tag)=>`
-    <rect class="dagnode ${cls}" x="${x}" y="${y}" width="196" height="46" rx="10"/>
-    <text class="dagtag" x="${x+184}" y="${y+16}" text-anchor="end">${tag}</text>
-    <text class="dagtext" x="${x+14}" y="${y+32}">${label}</text>`;
-  return `<svg viewBox="0 0 1060 150" role="img" aria-label="dbt lineage before this change">
-    <defs><marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
-      <path d="M0 0 10 5 0 10z" fill="var(--border2)"/></marker></defs>
-    ${node('n-seed',60,52,'crm_company','SEED')}
-    ${node('n-stg',432,52,'stg_company','STG')}
-    ${node('n-dim',804,52,'dim_company','DIM')}
-    <path class="dagline" d="M256 75 H426"/>
-    <path class="dagline" d="M628 75 H798"/>
-  </svg>`;
-}
-const DAG_ADDED=new Set(['purchased_company','company_name_aliases','stg_purchased_company',
-  'trn_scored_pairs','dim_company_duplicates','dim_record_status','dim_purchased_company']);
-const DAG_V2=[
-  {tag:'raw',cls:'n-seed',nodes:['crm_company','purchased_company','company_name_aliases']},
-  {tag:'staging',cls:'n-stg',nodes:['stg_company','stg_purchased_company']},
-  {tag:'transform',cls:'n-int',nodes:['trn_scored_pairs']},
-  {tag:'conformed',cls:'n-dim',nodes:['dim_company_duplicates','dim_record_status',
-                                      'dim_purchased_company','dim_company']},
-];
-const DAG_V1=[
-  {tag:'raw',cls:'n-seed',nodes:['crm_company']},
-  {tag:'staging',cls:'n-stg',nodes:['stg_company']},
-  {tag:'conformed',cls:'n-dim',nodes:['dim_company']},
-];
-// A wide SVG cannot shrink to a phone without the labels going unreadable,
-// so narrow viewports get the same graph as a vertical flow instead.
-function dagFlow(v1){
-  return `<div class="vflow">${(v1?DAG_V1:DAG_V2).map((L,i)=>`
-    ${i?'<div class="varrow"></div>':''}
-    <div class="vlayer">
-      <div class="vtag">${L.tag}</div>
-      ${L.nodes.map(n=>`<div class="vnode ${L.cls}${
-        !v1&&DAG_ADDED.has(n)?' added':''}">${n}</div>`).join('')}
-    </div>`).join('')}</div>`;
+    ${boxes}<path class="hline" d="M408 165 H417"/><path class="hline" d="M575 165 H584"/></svg>`;
 }
 function archFlow(){
-  const step=(t,sub)=>`<div class="vnode n-step"><b>${t}</b><span>${sub}</span></div>`;
-  return `<div class="vflow">
-    <div class="vnode n-page"><b>This page</b><span>GitHub Pages · static</span></div>
-    <div class="varrow" data-l="dispatch"></div>
-    <div class="vgroup">
-      <div class="vtag">Data pipeline via GitHub Actions</div>
-      ${step('Stage data','load_purchased.py')}
-      <div class="varrow"></div>
-      ${step('Transform data','dbt build --select tag:master_data')}
-      <div class="varrow"></div>
-      ${step('Export data','export_json.py')}
-    </div>
-    <div class="varrow" data-l="commit · poll the run"></div>
-    <div class="vnode n-page"><b>This page</b><span>refreshed from docs/data</span></div>
-  </div>`;
+  const sub=CFG.arch_subtitles||{};
+  return `<div class="vflow"><div class="vnode n-page"><b>This page</b><span>GitHub Pages · static</span></div>
+    <div class="varrow" data-l="dispatch"></div><div class="vgroup"><div class="vtag">Data pipeline via GitHub Actions</div>
+    ${CFG.pipeline_steps.map((s,i)=>`${i?'<div class="varrow"></div>':''}<div class="vnode n-step"><b>${esc(s.label)}</b><span>${esc(sub[s.key]||'')}</span></div>`).join('')}
+    </div><div class="varrow" data-l="commit · poll the run"></div>
+    <div class="vnode n-page"><b>This page</b><span>refreshed from docs/data</span></div></div>`;
+}
+function archZoomToggle(){
+  const svg=document.querySelector('.arch-svg');if(!svg)return;
+  const from=archZoom?ARCH_PIPE:ARCH_FULL,to=archZoom?ARCH_FULL:ARCH_PIPE;archZoom=!archZoom;
+  svg.classList.toggle('zoomed',archZoom);const btn=$('archZoomBtn');
+  if(btn)btn.innerHTML=archZoom?'&#8854; full picture':'&#8853; zoom to pipeline';
+  const t0=performance.now(),ms=460,ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+  const step=now=>{const p=Math.min(1,(now-t0)/ms),e=ease(p);
+    svg.setAttribute('viewBox',from.map((f,i)=>f+(to[i]-f)*e).join(' '));if(p<1)requestAnimationFrame(step);};
+  requestAnimationFrame(step);
+}
+const LAYER_CLS={seed:'n-seed',raw:'n-seed',stage:'n-stg',staging:'n-stg',transform:'n-int',conformed:'n-dim',datamart:'n-dm'};
+const LAYER_TAG={seed:'SEED',raw:'RAW',stage:'STG',staging:'STG',transform:'TRN',conformed:'DIM',datamart:'DM'};
+function dagLayers(){
+  const L=D.lineage;if(!L?.nodes?.length)return [];
+  const order=L.layers||['seed','stage','transform','conformed','datamart'];
+  const by={};L.nodes.forEach(n=>(by[n.layer]??=[]).push(n));
+  return order.filter(l=>by[l]).map(l=>({layer:l,cls:LAYER_CLS[l]||'n-int',nodes:by[l].map(n=>n.id)}));
 }
 function svgDag(){
-  const added=DAG_ADDED;
-  const node=(cls,x,y,label,tag)=>`
-    <rect class="dagnode ${cls}${added.has(label)?' added':''}" x="${x}" y="${y}" width="196" height="46" rx="10"/>
-    <text class="dagtag" x="${x+184}" y="${y+16}" text-anchor="end">${tag}</text>
-    <text class="dagtext" x="${x+14}" y="${y+32}">${label}</text>`;
-  const edge=(x1,y1,x2,y2,main)=>`<path class="dagline${main?' main':''}"
-    d="M${x1} ${y1} C ${x1+55} ${y1}, ${x2-55} ${y2}, ${x2} ${y2}"/>`;
-  return `<svg viewBox="0 0 1060 375" role="img" aria-label="dbt lineage graph">
-    <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
-      <path d="M0 0 10 5 0 10z" fill="var(--border2)"/></marker></defs>
-    ${node('n-seed',20,30,'crm_company','SEED')}
-    ${node('n-seed',20,150,'purchased_company','SEED')}
-    ${node('n-seed',20,270,'company_name_aliases','SEED')}
-    ${node('n-stg',300,60,'stg_company','STG')}
-    ${node('n-stg',300,210,'stg_purchased_company','STG')}
-    ${node('n-int',560,60,'trn_scored_pairs','TRN')}
-    ${node('n-dim',850,20,'dim_company_duplicates','DIM')}
-    ${node('n-dim',850,115,'dim_record_status','DIM')}
-    ${node('n-dim',850,210,'dim_purchased_company','DIM')}
-    ${node('n-dim',850,305,'dim_company','DIM')}
-    ${edge(216,53,294,83)}
-    ${edge(216,173,294,233)}
-    <path class="dagline" d="M216 293 C 262 293, 254 96, 294 83"/>
-    ${edge(216,293,294,233)}
-    <path class="dagline" d="M496 83 H554"/>
-    <path class="dagline" d="M496 233 C 532 233, 532 92, 554 83"/>
-    ${edge(756,83,844,43)}
-    ${edge(756,83,844,138)}
-    <path class="dagline" d="M496 233 C 660 188, 780 148, 844 138"/>
-    <path class="dagline" d="M496 83 C 640 214, 770 233, 844 233"/>
-    <path class="dagline" d="M496 83 C 660 332, 770 328, 844 328"/>
-    <path class="dagline" d="M948 161 V204"/>
-    <path class="dagline" d="M948 256 V299"/>
-  </svg>`;
+  const layers=dagLayers();if(!layers.length)return '';
+  const W=1060,NW=layers.length>4?176:196,NH=46,GAP=22,colGap=(W-layers.length*NW)/Math.max(1,layers.length-1);
+  const maxRows=Math.max(...layers.map(l=>l.nodes.length));
+  const H=Math.max(150,maxRows*(NH+GAP)+30);
+  const pos={};let nodes='';
+  layers.forEach((l,ci)=>{const x=layers.length===1?(W-NW)/2:ci*(NW+colGap);
+    const total=l.nodes.length*(NH+GAP)-GAP,y0=(H-total)/2;
+    l.nodes.forEach((n,ri)=>{const y=y0+ri*(NH+GAP);pos[n]={x,y};
+      nodes+=`<rect class="dagnode ${l.cls}" x="${x}" y="${y}" width="${NW}" height="${NH}" rx="10"/>
+        <text class="dagtag" x="${x+NW-12}" y="${y+16}" text-anchor="end">${LAYER_TAG[l.layer]||l.layer.toUpperCase()}</text>
+        <text class="dagtext" x="${x+14}" y="${y+32}">${esc(n)}</text>`;});});
+  const edges=D.lineage.edges.filter(([a,b])=>pos[a]&&pos[b]).map(([a,b])=>{
+    const x1=pos[a].x+NW,y1=pos[a].y+NH/2,x2=pos[b].x,y2=pos[b].y+NH/2;
+    return `<path class="dagline" d="M${x1} ${y1} C ${x1+55} ${y1}, ${x2-55} ${y2}, ${x2} ${y2}"/>`;}).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="dbt lineage graph">
+    <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="var(--border2)"/></marker></defs>${edges}${nodes}</svg>`;
+}
+function dagFlow(){
+  return `<div class="vflow">${dagLayers().map((L,i)=>`${i?'<div class="varrow"></div>':''}<div class="vlayer"><div class="vtag">${esc(L.layer)}</div>${L.nodes.map(n=>`<div class="vnode ${L.cls}">${esc(n)}</div>`).join('')}</div>`).join('')}</div>`;
+}
+function dagLegend(){
+  const sw={seed:'seed',raw:'seed',stage:'stg',staging:'stg',transform:'int',conformed:'dim',datamart:'dm'};
+  return `<div class="legend">${dagLayers().map(l=>`<span><span class="sw ${sw[l.layer]||'int'}"></span>${esc(l.layer)}</span>`).join('')}</div>`;
 }
 
-const SLIDES=[
-  {id:'title',kicker:'BI · ETL SCENARIO',render(){
-    return `<div class="titleslide">
-      <div class="kicker">Scenario walkthrough</div>
-      <h2>Import company lists.<br>Create zero duplicates.</h2>
-      <div class="stackchips">
-        <span class="schip hot">python</span><span class="schip hot">dbt</span>
-        <span class="schip">duckdb</span><span class="schip">github actions</span>
-        <span class="schip">jaro-winkler</span>
-      </div>
-      <p class="lead">The database already has companies in it. Sales bought company lists where one
-        company arrives as 7-Eleven, 711, and 7-Eleven, Inc., with the address written three
-        different ways. This pipeline works out which rows are already there, imports the ones
-        that are not, and records what happened to every row.</p>
-      <div class="byline">Bailey Thompson</div>
-    </div>`;}},
-  {id:'assumptions',kicker:'ASSUMPTIONS & STRATEGY',render(){
-    const m=t=>`<span class="mono">${t}</span>`;
-    return `<h2>Assumptions &amp; strategy</h2>
-      <div class="ptsec">What I assumed</div>
-      <ul class="pointlist">
-        <li><span class="pt">1</span><span><b>Master data is the source of truth.</b>
-          ${m('crm_company')} wins every conflict. An import adds rows; it never edits or
-          deletes one.</span></li>
-        <li><span class="pt">2</span><span><b>Purchased data is low-trust.</b> Abbreviations,
-          legal suffixes, missing zips, and duplicates inside the file itself.</span></li>
-        <li><span class="pt">3</span><span><b>Identity is name and address.</b> Not name alone:
-          the same name at a different street number is a second location.</span></li>
-        <li><span class="pt">4</span><span><b>The team already runs dbt.</b> So this is a pull
-          request to their project, in their conventions, not a new tool to adopt.</span></li>
-        <li><span class="pt">5</span><span><b>Seeds stand in for a landing stage.</b> On a CDW the
-          seed becomes a stage, and the loader becomes the copy into it.</span></li>
-      </ul>
-      <div class="ptsec">How I built it</div>
-      <ul class="pointlist">
-        <li><span class="pt">1</span><span><b>Narrow approach for efficiency.</b> I only compare
-          records if they already share attributes. Jaro-Winkler scores name and address from
-          there. No cross joins.</span></li>
-        <li><span class="pt">2</span><span><b>Medallion layering.</b> raw → staging (normalize)
-          → transform (match) → conformed (publish), with tests at every layer.</span></li>
-        <li><span class="pt">3</span><span><b>Re-running is safe.</b> ${m('dim_company')} is
-          incremental on ${m('company_id')}, so loading the same file twice changes
-          nothing.</span></li>
-        <li><span class="pt">4</span><span><b>Built to be maintained.</b> Contracts sit beside
-          the models they govern and settings are declared per model. Adding a blocking key is
-          one line; a steward owns the alias list in a spreadsheet.</span></li>
-      </ul>`;}},
-  {id:'arch',kicker:'THE ARCHITECTURE',render(){
-    return `<h2>The architecture</h2>
-      <p class="lead">Load dispatches a GitHub Actions workflow: Python ingest, dbt build,
-        results committed back as JSON. A real pipeline, driven from a web page.</p>
-      <div class="diagram" style="position:relative">
-        ${isNarrow()?archFlow():svgArch()}
-        ${isNarrow()?'':`<button class="zoombtn" id="archZoomBtn">${
-          archZoom?'&#8854; full picture':'&#8853; zoom to pipeline'}</button>`}
-      </div>`;}},
-  {id:'lineage',kicker:'DBT LINEAGE',render(){
-    const v1=projVer==='v1';
-    return `<div class="h2row"><h2>dbt lineage</h2>${verToggle()}</div>
-      <p class="lead">${v1
-        ? `The project before this request. One staging view over the CRM, one dimension
-           built from it. Nothing here knows about purchased data.`
-        : `Two seeds, one staging model, the whole transform layer, and three dimensions
-           are new. <span class="mono">stg_company</span> and
-           <span class="mono">dim_company</span> already existed and were extended.`}</p>
-      <div class="diagram" style="margin:38px 0 26px">${
-        isNarrow()?dagFlow(v1):(v1?svgDagV1():svgDag())}</div>
-      <div class="legend">
-        <span><span class="sw seed"></span>raw</span>
-        <span><span class="sw stg"></span>staging</span>
-        ${v1?'':'<span><span class="sw int"></span>transform</span>'}
-        <span><span class="sw dim"></span>conformed</span>
-        ${v1?'':'<span><span class="sw addsw"></span>added for this request</span>'}
-      </div>`;}},
-  {id:'code',kicker:'THE CODE',render(){
-    if(!D.models||!D.models.files?.length){
-      return `<h2>The code</h2>
-        <p class="lead">Not published yet. It lands with the next pipeline run
-          (<span class="mono">docs/data/models.json</span>).</p>`;
-    }
-    const {files,cur}=codeSlideCtx();
-    const v1=projVer==='v1',n1=(D.models.v1||[]).length;
-    return `<div class="h2row"><h2>The code</h2>${verToggle()}</div>
-      <p class="lead">${files.length} files,
-        ~${Math.round(files.reduce((a,f)=>a+f.sql.split('\n').length,0)/10)*10} lines.
-        ${v1?'The project before this request.'
-            :`<span class="dim">${files.length-n1} are new, marked
-              <span class="newdot inline">+</span>. Three of those are the deliverables,
-              the rest builds them.</span>`}</p>
-      <div class="ide tall${ideFull?' full':''}">
-        ${isNarrow()
-          ? `<select class="fxsel" id="fxsel" aria-label="Choose a file">${files.map(f=>{
-              const isNew=projVer==='v2'&&v1Paths().size&&!v1Paths().has(f.path);
-              return `<option value="${esc(f.path)}"${f.path===cur.path?' selected':''}>${
-                esc(f.path)}${isNew?'  +':''}</option>`;}).join('')}</select>`
-          : `<aside class="fx">
-               <div class="fxhead">EXPLORER</div>
-               <div class="fxrepo">data-engineering-scenario-crm-dedupe</div>
-               <div class="fxbody">${fileTree(files,cur.path)}</div>
-             </aside>`}
-        ${idePaneHtml(codeSlideCtx())}
-      </div>`;}},
-  {id:'table',kicker:'THE RESULT',render(){
-    const s=D.summary;
-    if(!s) return `<h2>The result</h2>
-      <p class="lead">Live data hasn't loaded yet. Check connectivity.</p>`;
-    const rows=D.company.map(c=>`
-      <tr${c.source!=='crm_company'?' class="rowimp"':''}>
-        <td class="num mono faded">${esc(c.company_id)}</td>
-        <td><b>${esc(c.company_name)}</b></td>
-        <td>${esc(c.address)}<span class="sub2">${esc(c.city)}, ${esc(c.state)} ${esc(c.zip??'')}</span></td>
-        <td><span class="mono faded">${esc(c.source)}</span>
-          ${c.source_record_key?`<span class="sub2 mono">${esc(c.source_record_key)}</span>`:''}</td>
-      </tr>`).join('');
-    return `<h2>The result</h2>
-      <p class="lead"><span class="mono">select * from dim_company</span></p>
-      <div class="verdicts scrollbox"><table>
-        <thead><tr><th>ID</th><th>Company</th><th>Address</th><th>Source</th></tr></thead>
-        <tbody>${rows}</tbody></table></div>`;}},
-  {id:'avoided',kicker:'WHAT WE AVOIDED',render(){
-    const av=D.avoided;
-    if(!av) return `<h2>What we avoided</h2>
-      <p class="lead">Not published yet
-        (<span class="mono">docs/data/avoided.json</span>).</p>`;
-    const rows=av.rows.map(r=>`
-      <tr${r.in_cluster?' class="rowdup"':''}>
-        <td><b>${esc(r.company_name)}</b></td>
-        <td>${esc(r.address)}<span class="sub2">${esc(r.city)}, ${esc(r.state)} ${esc(r.zip??'')}</span></td>
-        <td class="mono faded">${esc(r.phone_number??'—')}</td>
-        <td><span class="mono faded">${esc(r.source)}</span></td>
-      </tr>`).join('');
-    return `<h2>What we avoided</h2>
-      <p class="lead"><span class="mono">select * from stg_company union all
-        select * from stg_purchased_company</span></p>
-      <div class="verdicts scrollbox"><table>
-        <thead><tr><th>Company</th><th>Address</th><th>Phone</th><th>Source</th></tr></thead>
-        <tbody>${rows}</tbody></table></div>
-      `;}},
-];
+/* ---------- generic widgets ---------- */
+function labelCells(){document.querySelectorAll('table').forEach(t=>{
+  const heads=[...t.querySelectorAll('thead th')].map(h=>h.textContent.trim());if(!heads.length)return;
+  t.querySelectorAll('tbody tr').forEach(tr=>[...tr.children].forEach((td,i)=>{if(heads[i])td.setAttribute('data-l',heads[i]);}));});}
+const tableHTML=(headers,rowsHtml)=>`<div class="tablewrap"><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+const searchBox=(id,val,ph)=>`<label class="search">${ICO.search}<input id="${id}" value="${esc(val)}" placeholder="${esc(ph)}"></label>`;
+const searchState={};
+function hookSearch(id){const el=$(id);if(!el)return;el.addEventListener('input',()=>{
+  const pos=el.selectionStart;searchState[id]=el.value;renderPanel();const e2=$(id);if(e2){e2.focus();e2.setSelectionRange(pos,pos);}});}
+function meter(v){const pct=Math.max(0,Math.min(100,Math.round(v*100)));
+  return `<span class="meter"><span class="bar"><i style="width:${pct}%"></i></span><span class="v">${Number(v).toFixed(2)}</span></span>`;}
+const badge=(label,cls='b-crm',ico='')=>`<span class="badge ${cls}">${ico}${esc(label)}</span>`;
+// A whole table as a searchable card. The default console tab for every export table.
+function tablePanel(name,hint,opts={}){
+  const rows=D.tables[name]||[];const sid=`search_${name}`;const q=(searchState[sid]||'').trim().toLowerCase();
+  const cols=rows.length?Object.keys(rows[0]):[];
+  const shown=rows.filter(r=>!q||cols.some(c=>String(r[c]??'').toLowerCase().includes(q)));
+  const html=shown.map(r=>`<tr${opts.rowClass?` class="${opts.rowClass(r)}"`:''}>${cols.map(c=>`<td>${opts.cell?opts.cell(c,r[c],r):esc(fmtCell(r[c]))}</td>`).join('')}</tr>`).join('');
+  return `<div class="card"><div class="cardhead"><h2 class="mono">${esc(name)}</h2><span class="hint">${esc(hint||'')}</span><span class="spacer"></span>${searchBox(sid,searchState[sid]||'','search…')}</div>
+    ${rows.length?(shown.length?tableHTML(cols,html):'<div class="empty">No rows match that search.</div>'):'<div class="empty"><div class="big">∅</div>Empty at the current demo state.</div>'}</div>`;
+}
+function runButton(id){
+  return `<button class="btn btn-primary${token()?'':' locked'}" id="${id}" ${running?'disabled':''} ${token()?'':'title="This is the trigger. Only the repository owner can start a run."'}>${
+    running?'Pipeline running…':token()?`${esc(CFG.run_label)} <span class="arr">→</span>`:`${ICO.lock}${esc(CFG.run_label)}<span class="only">owner only</span>`}</button>`;
+}
+// Incoming-queue preview: the default first tab for load-the-next-batch scenarios.
+function incomingPanel(){
+  if(!D.next?.name)return `<div class="card"><div class="empty"><div class="big">✦</div><b>Every incoming file is loaded.</b><br><button class="btn btn-primary" id="resetBtn2">Reset the demo ↺</button></div></div>`;
+  const cols=D.next.rows.length?Object.keys(D.next.rows[0]):[];
+  const rows=D.next.rows.map((r,i)=>`<tr><td class="num faded">${i+1}</td>${cols.map(c=>`<td>${esc(r[c]||'—')}</td>`).join('')}</tr>`).join('');
+  return `<div class="card"><div class="cardhead"><h2><span class="mono">incoming/${esc(D.next.name)}.csv</span></h2><span class="hint">raw rows, not yet loaded</span></div>
+    ${tableHTML(['#',...cols],rows)}<div class="loadbar">${runButton('loadBtn')}</div></div>`;
+}
 
-/* ================= presentation shell ================= */
+/* ---------- presentation ---------- */
 function renderPresent(){
-  const s=SLIDES[slideIdx];
-  $('main').innerHTML=`
-    <div class="deck">
-      <section class="slide slide-${s.id} ${slideDir<0?'back':''}" id="slideEl">${s.render()}</section>
-      <div class="deckbar">
-        <button class="navbtn" id="prevBtn" ${slideIdx===0?'disabled':''}>← Back</button>
-        <div class="dots">${SLIDES.map((x,i)=>
-          `<button class="dot2" data-goto="${i}" aria-current="${i===slideIdx}" title="${x.kicker}"></button>`).join('')}</div>
-        <span class="slidecount">${slideIdx+1} / ${SLIDES.length}</span>
-        <span class="keyhint"><span class="kbd">←</span><span class="kbd">→</span> to navigate</span>
-        <button class="navbtn primary" id="nextBtn" ${slideIdx===SLIDES.length-1?'disabled':''}>Next →</button>
-      </div>
-    </div>`;
-  $('prevBtn').onclick=()=>gotoSlide(slideIdx-1);
-  $('nextBtn').onclick=()=>gotoSlide(slideIdx+1);
+  const S=window.SLIDES, s=S[slideIdx];
+  $('main').innerHTML=`<div class="deck"><section class="slide slide-${s.id} ${slideDir<0?'back':''}" id="slideEl">${s.render()}</section>
+    <div class="deckbar"><button class="navbtn" id="prevBtn" ${slideIdx===0?'disabled':''}>← Back</button>
+      <div class="dots">${S.map((x,i)=>`<button class="dot2" data-goto="${i}" aria-current="${i===slideIdx}" title="${esc(x.kicker)}"></button>`).join('')}</div>
+      <span class="slidecount">${slideIdx+1} / ${S.length}</span><span class="keyhint"><span class="kbd">←</span><span class="kbd">→</span> to navigate</span>
+      <button class="navbtn primary" id="nextBtn" ${slideIdx===S.length-1?'disabled':''}>Next →</button></div></div>`;
+  $('prevBtn').onclick=()=>gotoSlide(slideIdx-1);$('nextBtn').onclick=()=>gotoSlide(slideIdx+1);
   document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>gotoSlide(+b.dataset.goto));
-  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{
-    const path=b.dataset.open, id=SLIDES[slideIdx].id;
-    if(id==='code'){
-      modelPick=path;ideView='code';
-      const ide=document.querySelector('.ide');
-      if(ide){
-        ide.querySelectorAll('.fxrow.on').forEach(r=>r.classList.remove('on'));
-        b.classList.add('on');
-        swapIdePane();
-        return;
-      }
-    }
-    renderPresent();
-  });
+  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{modelPick=b.dataset.open;ideView='code';
+    const ide=document.querySelector('.ide');if(ide){ide.querySelectorAll('.fxrow.on').forEach(r=>r.classList.remove('on'));b.classList.add('on');swapIdePane();return;}renderPresent();});
   document.querySelector('.fxrow.on')?.scrollIntoView({block:'nearest',inline:'nearest'});
-  const zb=$('archZoomBtn'); if(zb)zb.onclick=archZoomToggle;
-  const fs=$('fxsel');
-  if(fs)fs.onchange=()=>{modelPick=fs.value;ideView='code';renderPresent();};
-  wireVerToggle();
-  wireIdeButtons();
-  labelCells();
+  const zb=$('archZoomBtn');if(zb)zb.onclick=archZoomToggle;
+  const fs=$('fxsel');if(fs)fs.onchange=()=>{modelPick=fs.value;ideView='code';renderPresent();};
+  wireIdeButtons();labelCells();
+  if(s.after)s.after();
 }
-function gotoSlide(i){
-  if(i<0||i>=SLIDES.length)return;
-  if(ideFull)toggleIdeFull();
-  slideDir=i>=slideIdx?1:-1;
-  slideIdx=i;
-  history.replaceState(null,'',`#present/${i+1}`);
-  renderPresent();
-}
+function gotoSlide(i){if(i<0||i>=window.SLIDES.length)return;if(ideFull)toggleIdeFull();
+  slideDir=i>=slideIdx?1:-1;slideIdx=i;history.replaceState(null,'',`#present/${i+1}`);renderPresent();}
 addEventListener('keydown',e=>{
-  if(mode!=='present')return;
-  if(e.target.closest('input,textarea')||$('tokenDlg').open)return;
+  if(mode!=='present')return;if(e.target.closest('input,textarea')||$('tokenDlg').open)return;
   if(ideFull){if(e.key==='Escape')toggleIdeFull();return;}
   if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();gotoSlide(slideIdx+1);}
   if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();gotoSlide(slideIdx-1);}
-  if(e.key==='Home'){gotoSlide(0);}
-  if(e.key==='End'){gotoSlide(SLIDES.length-1);}
+  if(e.key==='Home')gotoSlide(0);if(e.key==='End')gotoSlide(window.SLIDES.length-1);
 });
 
-/* ================= console ================= */
+/* ---------- console ---------- */
 function pipe(){
-  const s=D.summary, L=D.logs||{};
-  const order=['dispatch','running','refresh','done'];
-  const state=()=>{
-    if(runPhase==='idle'||runPhase==='fail')return '';
-    return runPhase==='done'?'done':'active';
-  };
-  const next=s.next_file;
+  const s=D.summary,L=D.logs||{},steps=CFG.pipeline_steps;
+  const state=()=>runPhase==='idle'||runPhase==='fail'?'':runPhase==='done'?'done':'active';
   const dim=t=>`<span class="dim">${t}</span>`;
   const cell=(v,cls,label)=>`<div class="lgc ${cls}"${label?` data-l="${label}"`:''}>${v}</div>`;
-  const row=(time,py,db,cf,cls='')=>
-    cell(time,`lgt ${cls}`,'Time')+cell(py,cls,'Python')+
-    cell(db,cls,'dbt build')+cell(cf,`lgend ${cls}`,'Conformed tables');
-
-  const hist=(L.history||[]).slice(-8);
-  const rows=hist.map(e=>{
-    const py=e.action==='reset'?dim('reset · queue cleared')
-            :e.loaded_file?`loaded ${esc(e.loaded_file)}.csv`:dim('nothing left to load');
-    const db=e.passed?`dbt build --select tag:master_data · <span class="ok">PASS=${e.passed}</span>`
-            :dim('—');
-    const cf=e.action==='reset'?`dim_company → ${fmtN(e.companies_total??s.companies_total)} records`
-            :e.loaded_file?`dim_company → added ${e.added} records`:dim('—');
-    return row(`<span title="${esc(e.at||'')}">${fmtTime(e.at)}</span>`,py,db,cf);
-  });
-
-  // The live row is replaced by the real one the moment CI publishes it.
-  if(running&&(L.history||[]).length<=histBase){
-    const r=dim('running…');
-    rows.push(row('now', r, r, r, 'live'));
-  }
-  if(!rows.length)rows.push(row(dim('—'),dim('no run yet'),dim('no run yet'),dim('no run yet')));
-
-  const heads=[['load','Python'],['dbt','dbt build'],['crm','Conformed tables']];
-  $('pipe').innerHTML='<div class="loggrid">'+
-    '<div class="lgh">Time</div>'+
-    heads.map(([k,t])=>`<div class="lgh ${state(k)}"><span class="lcs"></span>${t}</div>`).join('')+
-    rows.join('')+'</div>';
-
-  const all=[...s.files_loaded,...s.files_pending];
-  $('queue').innerHTML=all.map(f=>{
-    const loaded=s.files_loaded.includes(f),isNext=f===s.next_file;
-    const loading=running&&isNext&&runPhase!=='done';
-    const cls=loading?'loading':loaded?'loaded':isNext?'next':'';
+  const row=(time,cells,cls='')=>cell(time,`lgt ${cls}`,'Time')+steps.map((st,i)=>cell(cells[i],`${i===steps.length-1?'lgend ':''}${cls}`,st.label)).join('');
+  const rows=(L.history||[]).slice(-8).map(e=>row(`<span title="${esc(e.at||'')}">${fmtTime(e.at)}</span>`,
+    steps.map(st=>{const v=e[st.key];return v==null||v==='—'?dim('—'):esc(String(v)).replace(/PASS=(\d+)/,'<span class="ok">PASS=$1</span>');})));
+  if(running&&(L.history||[]).length<=histBase)rows.push(row('now',steps.map(()=>dim('running…')),'live'));
+  if(!rows.length)rows.push(row(dim('—'),steps.map(()=>dim('no run yet'))));
+  $('pipe').innerHTML='<div class="loggrid"><div class="lgh">Time</div>'+
+    steps.map(st=>`<div class="lgh ${state()}"><span class="lcs"></span>${esc(st.label)}</div>`).join('')+rows.join('')+'</div>';
+  const all=[...(s.files_loaded||[]),...(s.files_pending||[])];
+  $('queue').innerHTML=all.length?all.map(f=>{const loaded=(s.files_loaded||[]).includes(f),isNext=f===s.next_file;
+    const loading=running&&isNext&&runPhase!=='done';const cls=loading?'loading':loaded?'loaded':isNext?'next':'';
     const mark=loading?'<span class="spin"></span>':loaded?'✓':isNext?'→':'·';
-    return `<span class="fchip ${cls}" data-file="${esc(f)}">${mark}<span class="mono">${esc(f)}.csv</span></span>`;
-  }).join('');
+    return `<span class="fchip ${cls}">${mark}<span class="mono">${esc(f)}.csv</span></span>`;}).join('')
+    :'<span class="dim">no queue</span>';
   cta();
   const rl=$('runline');
-  if(runPhase==='idle'){rl.style.display='none';}
-  else{
-    rl.style.display='flex';
-    rl.innerHTML=`${running?'<span class="spin"></span>':''}<span>${runMsg}</span>`+
-      (runLink?`&nbsp;<a href="${runLink}" target="_blank" rel="noopener">view run ↗</a>`:'');
-  }
+  if(runPhase==='idle')rl.style.display='none';
+  else{rl.style.display='flex';rl.innerHTML=`${running?'<span class="spin"></span>':''}<span>${runMsg}</span>`+(runLink?`&nbsp;<a href="${runLink}" target="_blank" rel="noopener">view run ↗</a>`:'');}
 }
 function cta(){
-  const s=D.summary,b=$('ctaBtn');
-  if(!b)return;
-  const total=s.files_loaded.length+s.files_pending.length;
+  const s=D.summary,b=$('ctaBtn');if(!b)return;
+  const ex=$('extraActs');
+  if(ex){ex.innerHTML=(CFG.actions.extra||[]).map(a=>`<button class="btn btn-ghost" data-act="${esc(a.action)}" ${running||!token()?'disabled':''} title="${esc(a.title||'')}">${esc(a.label)}</button>`).join('');
+    ex.querySelectorAll('[data-act]').forEach(x=>x.onclick=()=>runPipeline(x.dataset.act));}
   b.classList.remove('attn');b.disabled=false;
-  if(running){
-    b.innerHTML='<span class="spin"></span>Running…';b.disabled=true;b.onclick=null;
-    return;
-  }
-  if(!s.next_file){
-    b.innerHTML='Reset demo <span class="arr">↺</span>';b.onclick=confirmReset;
-    return;
-  }
-  if(!token()){
-    b.innerHTML=`${ICO.lock}Run data pipeline<span class="only">owner only</span>`;
-    b.classList.add('locked');
-    b.title='This is the trigger. Only the repository owner can start a run.';
-    b.onclick=()=>denyFlash(b);return;
-  }
-  b.innerHTML=`Run data pipeline <span class="arr">→</span>`;
-  b.onclick=()=>runPipeline('load_next');
-  if(s.files_loaded.length===0)b.classList.add('attn');
+  if(running){b.innerHTML='<span class="spin"></span>Running…';b.disabled=true;b.onclick=null;return;}
+  const hasQueue=(s.files_loaded||[]).length+(s.files_pending||[]).length>0;
+  if(hasQueue&&!s.next_file){b.innerHTML='Reset demo <span class="arr">↺</span>';b.onclick=confirmReset;return;}
+  if(!token()){b.innerHTML=`${ICO.lock}${esc(CFG.run_label)}<span class="only">owner only</span>`;b.classList.add('locked');
+    b.title='This is the trigger. Only the repository owner can start a run.';b.onclick=()=>denyFlash(b);return;}
+  b.innerHTML=`${esc(CFG.run_label)} <span class="arr">→</span>`;b.onclick=()=>runPipeline(CFG.actions.run);
+  if(hasQueue&&(s.files_loaded||[]).length===0)b.classList.add('attn');
 }
-function badge(status){
-  const m=STATUS_META[status]||{label:status,cls:'b-crm',ico:''};
-  return `<span class="badge ${m.cls}">${m.ico}${esc(m.label)}</span>`;
-}
-function meter(v){
-  const pct=Math.max(0,Math.min(100,Math.round(v*100)));
-  return `<span class="meter"><span class="bar"><i style="width:${pct}%"></i></span><span class="v">${Number(v).toFixed(2)}</span></span>`;
-}
-// Cards on a phone need each cell to know its column. Do it once, generically,
-// so every table on the page gets it instead of hand-labelling each renderer.
-function labelCells(){
-  document.querySelectorAll('table').forEach(t=>{
-    const heads=[...t.querySelectorAll('thead th')].map(h=>h.textContent.trim());
-    if(!heads.length)return;
-    t.querySelectorAll('tbody tr').forEach(tr=>{
-      [...tr.children].forEach((td,i)=>{ if(heads[i])td.setAttribute('data-l',heads[i]); });
-    });
-  });
-}
-function tableHTML(headers,rowsHtml){
-  return `<div class="tablewrap"><table>
-    <thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
-    <tbody>${rowsHtml}</tbody></table></div>`;
-}
-function searchBox(id,val,ph){
-  return `<label class="search">${ICO.search}<input id="${id}" value="${esc(val)}" placeholder="${esc(ph)}"></label>`;
-}
-function hookSearch(id,setter){
-  const el=$(id);if(!el)return;
-  el.addEventListener('input',()=>{
-    const pos=el.selectionStart;setter(el.value);renderPanel();
-    const el2=$(id);if(el2){el2.focus();el2.setSelectionRange(pos,pos);}
-  });
-}
-function panelCompany(){
-  const q=searchCompany.trim().toLowerCase();
-  const newIds=new Set();
-  if(prevCompanyIds)D.company.forEach(c=>{if(!prevCompanyIds.has(c.company_id))newIds.add(c.company_id);});
-  const rows=D.company
-    .filter(c=>!q||`${c.company_name} ${c.address} ${c.city} ${c.website}`.toLowerCase().includes(q))
-    .map(c=>`
-    <tr${newIds.has(c.company_id)?' class="rownew"':''}>
-      <td class="num mono faded">${esc(c.company_id)}</td>
-      <td><b>${esc(c.company_name)}</b></td>
-      <td>${esc(c.address)}<span class="sub2">${esc(c.city)}, ${esc(c.state)} ${esc(c.zip??'')}</span></td>
-      <td class="mono faded">${esc(c.phone_number??'—')}</td>
-      <td class="faded">${esc(c.website??'—')}</td>
-      <td><span class="mono faded">${esc(c.source)}</span>
-          ${c.source_record_key?`<span class="sub2 mono">${esc(c.source_record_key)}</span>`:''}</td>
-    </tr>`).join('');
-  return `<div class="card">
-    <div class="cardhead"><h2 class="mono">dim_company</h2>
-      <span class="hint">the company dimension after every load so far</span>
-      <span class="spacer"></span>${searchBox('searchCompanyIn',searchCompany,'search companies…')}</div>
-    ${rows?tableHTML(['ID','Company','Address','Phone','Website','Source'],rows)
-          :'<div class="empty">No companies match that search.</div>'}
-  </div>`;
-}
-function panelIncoming(){
-  if(!D.next.name){
-    return `<div class="card"><div class="empty">
-      <div class="big">✦</div>
-      <b>All company files are loaded.</b><br>
-      <span>${fmtN(D.summary.companies_total)} companies in the CRM.</span><br>
-      <button class="btn btn-primary" id="resetBtn2">Reset the demo ↺</button>
-    </div></div>`;
-  }
-  const rows=D.next.rows.map((r,i)=>`
-    <tr>
-      <td class="num faded">${i+1}</td>
-      <td><b>${esc(r.company_name)}</b></td>
-      <td>${esc([r.address_1,r.address_2,r.address_3].filter(Boolean).join(' · '))}
-          <span class="sub2">${esc(r.city)}, ${esc(r.state)} ${esc(r.zip)}</span></td>
-      <td class="mono faded">${esc(r.primary_phone_number||'—')}</td>
-      <td class="faded">${esc(r.website||'—')}</td>
-    </tr>`).join('');
-  return `<div class="card">
-    <div class="cardhead"><h2><span class="mono">incoming/${esc(D.next.name)}.csv</span></h2>
-      <span class="hint">raw company data, not yet imported</span></div>
-    ${tableHTML(['#','Company','Address','Phone','Website'],rows)}
-    <div class="loadbar">
-      <button class="btn btn-primary${token()?'':' locked'}" id="loadBtn" ${running?'disabled':''}
-        ${token()?'':'title="This is the trigger. Only the repository owner can start a run."'}>${
-        running?'Pipeline running…'
-        :token()?`Run data pipeline <span class="arr">→</span>`
-        :`${ICO.lock}Run data pipeline<span class="only">owner only</span>`}</button>
-    </div>
-  </div>`;
-}
-function panelDupes(){
-  const pairs=D.dupes.length;
-  const records=new Set(D.dupes.map(d=>d.record_key)).size;
-  const rows=D.dupes
-    .map(r=>`
-    <tr>
-      <td class="mono faded">${esc(r.record_key)}</td>
-      <td><b>${esc(r.company_name)}</b><span class="sub2">${esc(r.address_1??'')}</span></td>
-      <td>${esc(r.matched_name)}<span class="sub2">${esc(r.matched_address??'')}</span></td>
-      <td>${meter(r.name_similarity)}</td>
-      <td>${meter(r.address_similarity)}</td>
-      <td><span class="badge b-dup">${ICO.copy}duplicate</span></td>
-    </tr>`).join('');
-  return `<div class="card">
-    <div class="cardhead"><h2 class="mono">dim_company_duplicates</h2>
-      <span class="hint">one row per collision · ${pairs} pairs across ${records} records</span></div>
-    ${pairs
-        ?tableHTML(['Record','Purchased record','Matched against','Name sim','Addr sim','Class'],rows)
-        :'<div class="empty"><div class="big">✓</div>No duplicate pairs yet.</div>'}
-  </div>`;
-}
-
 function renderPanel(){
-  const panel=$('panel');if(!panel)return;
-  panel.innerHTML={company:panelCompany,incoming:panelIncoming,dupes:panelDupes}[currentTab]();
-  const lb=$('loadBtn');
-  if(lb)lb.onclick=()=>token()?runPipeline('load_next'):denyFlash(lb);
-  const rb2=$('resetBtn2');
-  if(rb2)rb2.onclick=confirmReset;
-  hookSearch('searchCompanyIn',v=>searchCompany=v);
+  const P=window.PANELS,panel=$('panel');if(!panel)return;
+  panel.innerHTML=(P.render[currentTab]||(()=>''))();
+  const lb=$('loadBtn');if(lb)lb.onclick=()=>token()?runPipeline(CFG.actions.run):denyFlash(lb);
+  const rb2=$('resetBtn2');if(rb2)rb2.onclick=confirmReset;
+  panel.querySelectorAll('label.search input').forEach(i=>hookSearch(i.id));
   labelCells();
 }
 function renderConsole(){
-  $('main').innerHTML=`
-    <section class="pipe-card">
-      <div class="pipehead">
-        <div class="pipeh-l"><div class="pipetitle">Data pipeline</div></div>
-        <button class="btn btn-primary cta" id="ctaBtn">Load</button>
-      </div>
-      <div class="piperow">
-        <aside class="srcbox">
-          <div class="srclabel">Source</div>
-          <div class="queue" id="queue"></div>
-        </aside>
-        <div class="pipe" id="pipe"></div>
-      </div>
-      <div class="runline" id="runline" style="display:none"></div>
-    </section>
-    <div class="tabs" role="tablist" id="tabs">
-      <button class="tab" role="tab" data-tab="incoming"><span class="mono">incoming/*.csv</span><span class="cnt" id="cnt-incoming"></span></button>
-      <button class="tab" role="tab" data-tab="company"><span class="mono">dim_company</span><span class="cnt" id="cnt-company"></span></button>
-      <button class="tab" role="tab" data-tab="dupes"><span class="mono">dim_company_duplicates</span><span class="cnt" id="cnt-dupes"></span></button>
-    </div>
+  const P=window.PANELS;
+  $('main').innerHTML=`<section class="pipe-card"><div class="pipehead"><div class="pipeh-l"><div class="pipetitle">Data pipeline</div></div>
+      <span class="extraActs" id="extraActs"></span><button class="btn btn-primary cta" id="ctaBtn">Run</button></div>
+    <div class="piperow"><aside class="srcbox"><div class="srclabel">Source</div><div class="queue" id="queue"></div></aside><div class="pipe" id="pipe"></div></div>
+    <div class="runline" id="runline" style="display:none"></div></section>
+    <div class="tabs" role="tablist" id="tabs">${P.tabs.map(t=>`<button class="tab" role="tab" data-tab="${esc(t.key)}"><span class="mono">${esc(t.label)}</span><span class="cnt" id="cnt-${esc(t.key)}"></span></button>`).join('')}</div>
     <div id="panel"></div>`;
-  $('tabs').addEventListener('click',e=>{
-    const t=e.target.closest('.tab');if(!t)return;
-    currentTab=t.dataset.tab;
-    history.replaceState(null,'',`#console/${currentTab}`);
-    renderConsoleBody();
-  });
+  $('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;currentTab=t.dataset.tab;
+    history.replaceState(null,'',`#console/${currentTab}`);renderConsoleBody();});
   renderConsoleBody();
 }
 function renderConsoleBody(){
   pipe();
-  $('cnt-company').textContent=D.company.length;
-  $('cnt-incoming').textContent=D.next.name?D.next.rows.length:0;
-  $('cnt-dupes').textContent=D.dupes.length;
+  window.PANELS.tabs.forEach(t=>{const c=$(`cnt-${t.key}`);if(c)c.textContent=t.count?t.count():'';});
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===currentTab));
   renderPanel();
 }
 
-/* ================= mode routing ================= */
-function setMode(m,push=true){
-  mode=m;
+/* ---------- mode routing ---------- */
+function setMode(m,push=true){mode=m;
   if(ideFull&&m==='console'){ideFull=false;document.documentElement.classList.remove('noscroll');}
   if(push)history.replaceState(null,'',m==='present'?`#present/${slideIdx+1}`:`#console/${currentTab}`);
-  document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===mode));
-  render();
-}
-function render(){
-  if(!D.summary){return;}
-  if(mode==='present')renderPresent();else renderConsole();
-}
-$('modes').addEventListener('click',e=>{
-  const b=e.target.closest('.mode');if(b)setMode(b.dataset.mode);
-});
+  document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===mode));render();}
+function render(){if(!D.summary||!CFG)return;if(mode==='present')renderPresent();else renderConsole();}
+$('modes').addEventListener('click',e=>{const b=e.target.closest('.mode');if(b)setMode(b.dataset.mode);});
 function parseHash(){
-  const h=location.hash.slice(1);
-  if(h.startsWith('present')){
-    mode='present';
-    const n=parseInt(h.split('/')[1],10);
-    if(n>=1&&n<=SLIDES.length)slideIdx=n-1;
-  }else if(h.startsWith('console')){
-    mode='console';
-    const t=h.split('/')[1];
-    if(['company','incoming','dupes'].includes(t))currentTab=t;
-  }else if(['company','incoming','dupes','how'].includes(h)){
-    mode='console';currentTab=h==='how'?'company':h;
-  }
+  const h=location.hash.slice(1),tabs=window.PANELS.tabs.map(t=>t.key);
+  if(h.startsWith('present')){mode='present';const n=parseInt(h.split('/')[1],10);if(n>=1&&n<=window.SLIDES.length)slideIdx=n-1;}
+  else if(h.startsWith('console')){mode='console';const t=h.split('/')[1];if(tabs.includes(t))currentTab=t;}
+  else if(tabs.includes(h)){mode='console';currentTab=h;}
 }
 addEventListener('hashchange',()=>{parseHash();setMode(mode,false);});
 
-/* ================= pipeline run ================= */
+/* ---------- pipeline run ---------- */
 async function gh(path,opts={}){
-  const r=await fetch(`${API}${path}`,{...opts,
-    headers:{Accept:'application/vnd.github+json',Authorization:`Bearer ${token()}`,
-             'X-GitHub-Api-Version':'2022-11-28',...(opts.headers||{})}});
+  const r=await fetch(`${API}${path}`,{...opts,headers:{Accept:'application/vnd.github+json',Authorization:`Bearer ${token()}`,'X-GitHub-Api-Version':'2022-11-28',...(opts.headers||{})}});
   if(!r.ok&&r.status!==204)throw new Error(`GitHub API ${r.status} on ${path.split('?')[0]}`);
   return r.status===204?null:r.json();
 }
 function setPhase(phase,msg){runPhase=phase;runMsg=msg;if(mode==='console'&&$('pipe'))pipe();}
 async function runPipeline(action){
   if(!token()){toast('Only the repository owner can start a run.');return;}
-  if(running)return;
-  running=true;
-  prevSummary={...D.summary};
-  prevCompanyIds=new Set(D.company.map(c=>c.company_id));
-  runLink=null;
-  histBase=(D.logs?.history||[]).length;
-  setPhase('dispatch',action==='reset'?'Resetting the demo…':'Dispatching the pipeline workflow…');
+  if(running)return;running=true;prevSummary={...D.summary};runLink=null;histBase=(D.logs?.history||[]).length;
+  const isReset=action===CFG.actions.reset;
+  setPhase('dispatch',isReset?'Resetting the demo…':'Dispatching the pipeline workflow…');
   if(mode==='console')renderPanel();
   try{
     const t0=new Date(Date.now()-15000).toISOString();
-    await gh(`/repos/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,
-      {method:'POST',body:JSON.stringify({ref:'main',inputs:{action}})});
+    await gh(`/repos/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,{method:'POST',body:JSON.stringify({ref:'main',inputs:{action}})});
     let run=null;
-    for(let i=0;i<20&&!run;i++){
-      await sleep(2500);
-      const rs=await gh(`/repos/${REPO}/actions/workflows/${WORKFLOW}/runs?created=%3E${encodeURIComponent(t0)}&per_page=1`);
-      run=rs.workflow_runs?.[0]||null;
-    }
+    for(let i=0;i<20&&!run;i++){await sleep(2500);
+      const rs=await gh(`/repos/${REPO}/actions/workflows/${WORKFLOW}/runs?created=%3E${encodeURIComponent(t0)}&per_page=1`);run=rs.workflow_runs?.[0]||null;}
     if(!run)throw new Error('workflow run never appeared');
-    runLink=run.html_url;
-    setPhase('running','Running…');
-    while(true){
-      await sleep(3000);
-      run=await gh(`/repos/${REPO}/actions/runs/${run.id}`);
-      if(run.status==='completed')break;
-    }
+    runLink=run.html_url;setPhase('running','Running…');
+    while(true){await sleep(3000);run=await gh(`/repos/${REPO}/actions/runs/${run.id}`);if(run.status==='completed')break;}
     if(run.conclusion!=='success')throw new Error(`CI run ${run.conclusion}. Check the Actions log`);
-    setPhase('refresh','Tests passed. Pulling fresh tables…');
-    await sleep(1200);
-    await loadAll(true);
-    running=false;
-    setPhase('done',action==='reset'
-      ?'Demo reset. Back to the original 5 companies.'
-      :'Done. dbt tests passed and the CRM refreshed.');
-    if(mode==='console'){currentTab=action==='reset'?'incoming':'company';}
+    setPhase('refresh','Tests passed. Pulling fresh tables…');await sleep(1200);await loadAll(true);running=false;
+    setPhase('done',isReset?'Demo reset.':'Done. dbt tests passed and the tables refreshed.');
+    if(mode==='console'&&window.PANELS.afterRun)currentTab=window.PANELS.afterRun(action)||currentTab;
     render();
-    if(action!=='reset'&&prevSummary){
-      const s=D.summary,parts=[];
-      const add=(n,word)=>{if(n>0)parts.push(`<b>${n}</b> ${word}`);};
-      add(s.companies_total-prevSummary.companies_total,'new companies imported');
-      add(s.duplicates_blocked-prevSummary.duplicates_blocked,'duplicates blocked');
-      toast(parts.length?parts.join(' · '):'Load complete',5200);
-    }else if(action==='reset'){toast('Demo reset ↺');}
+    if(window.PANELS.toast){const t=window.PANELS.toast(action,prevSummary,D.summary);if(t)toast(t,5200);}
+    else toast(isReset?'Demo reset ↺':'Run complete');
     setTimeout(()=>{if(!running){runPhase='idle';if(mode==='console'&&$('pipe'))pipe();}},7000);
-  }catch(e){
-    running=false;
-    setPhase('fail',`Failed: ${e.message}`);
-    toast(`⚠ ${e.message}`,6000);
-    if(mode==='console')renderPanel();
-  }
+  }catch(e){running=false;setPhase('fail',`Failed: ${e.message}`);toast(`⚠ ${e.message}`,6000);if(mode==='console')renderPanel();}
 }
-function confirmReset(){
-  if(running)return;
-  if(confirm('Reset the demo? This clears all loaded files and returns the CRM to its original 5 companies.'))
-    runPipeline('reset');
-}
+function confirmReset(){if(running)return;if(confirm('Reset the demo? This returns every table to its starting state.'))runPipeline(CFG.actions.reset);}
 
-/* ================= wiring ================= */
+/* ---------- wiring ---------- */
 $('gearBtn').onclick=()=>{$('tokenInput').value=token();$('tokenDlg').showModal();};
-$('tokenSave').onclick=()=>{
-  const v=$('tokenInput').value.trim();
-  if(v){localStorage.setItem('gh_token',v);toast('Token saved ⚡');}
-  $('tokenDlg').close();render();
-};
+$('tokenSave').onclick=()=>{const v=$('tokenInput').value.trim();if(v){localStorage.setItem('gh_token',v);toast('Token saved ⚡');}$('tokenDlg').close();render();};
 $('tokenClear').onclick=()=>{localStorage.removeItem('gh_token');$('tokenInput').value='';$('tokenDlg').close();render();};
 $('resetBtn').onclick=confirmReset;
 
-parseHash();
-setMode(mode,false);
-loadAll().catch(e=>{
-  $('main').innerHTML=`<div class="card"><div class="empty">Couldn't load data (${esc(e.message)}).<br>
-    Has the pipeline published <span class="mono">docs/data/</span> yet?</div></div>`;
-});
+// Everything slides.js / panels.js may use.
+window.S={esc,fmtN,fmtTime,fmtCell,tableHTML,searchBox,meter,badge,tablePanel,incomingPanel,runButton,
+  codePanel,ideHtml,svgArch,archFlow,svgDag,dagFlow,dagLegend,isNarrow,token,toast,ICO,render,
+  get D(){return D;},get CFG(){return CFG;},get running(){return running;},get archZoom(){return archZoom;},
+  get searchState(){return searchState;}};
+
+async function boot(){
+  CFG=await (await fetch(`scenario.json?t=${Date.now()}`,{cache:'no-store'})).json();
+  REPO=CFG.repo;WORKFLOW=CFG.workflow||'pipeline.yml';
+  $('hTitle').textContent=CFG.title;$('hSub').textContent=CFG.subtitle;document.title=CFG.title;
+  $('srcLink').href=`https://github.com/${REPO}`;$('actLink').href=`https://github.com/${REPO}/actions`;
+  $('dlgRepo').textContent=REPO.split('/')[1]||REPO;
+  currentTab=window.PANELS.tabs[0]?.key||null;
+  parseHash();
+  document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===mode));
+  try{await loadAll(false);}catch(e){$('main').innerHTML=`<div class="card"><div class="empty">Could not load <span class="mono">docs/data</span>: ${esc(e.message)}. Run the pipeline workflow once to publish it.</div></div>`;}
+}
 </script>
+<script src="slides.js"></script>
+<script src="panels.js"></script>
+<script>boot();</script>
 </body>
 </html>

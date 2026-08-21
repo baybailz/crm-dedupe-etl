@@ -1,0 +1,14 @@
+# Datamart contracts. One row per record on either side of the match,
+# which is exactly one more than the pipeline should ever import.
+version: 2
+
+models:
+  - name: dm_naive_import
+    description: >
+      The naive import: master data and purchased data unioned with no
+      matching. What the CRM would look like if the lists were loaded as-is.
+    columns:
+      - name: company_name
+        tests: [not_null]
+      - name: source
+        tests: [not_null]

@@ -9,7 +9,7 @@ data_tests:
       against everything, so the record matches nothing and imports as
       new: a silent duplicate in master data.
     config:
-      tags: ['master_data']
+      tags: ['scenario']
 
   - name: assert_unique_candidate_pairs
     description: >
@@ -17,4 +17,4 @@ data_tests:
       blocking pass with union all instead of union would double every
       score and inflate the duplicate report.
     config:
-      tags: ['master_data']
+      tags: ['scenario']
